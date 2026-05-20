@@ -1,0 +1,243 @@
+\section{Ablation Studies}
+
+This section analyzes the contribution of different components of the proposed method. All ablation studies follow the official CUB-200-2011 train/test protocol. The goal is to understand how attribute selection, attribute subset size, diversity loss, and random attribute selection affect the final performance. 
+Unless otherwise stated, attribute-guided variants use species-level fusion with \(\lambda_{attr}=0.5\) and \(\lambda_{div}=0.5\). The diversity-loss ablation varies only \(\lambda_{div}\), while the fusion-design ablation varies the use of fusion, attribute supervision, and diversity regularization.
+
+
+
+
+\subsection{Effect of Attribute Selection}
+
+This ablation evaluates different attribute usage strategies. It addresses RQ2 and RQ3 by comparing compact selected subsets with FullAttr-312 and by comparing HSDAS with Random-199 and Sibling-IVAS-188.
+
+\begin{table}[t]
+    \centering
+    \caption{Effect of attribute selection strategy under the official CUB train/test protocol. Random-199 is reported as the mean over three random seeds.}
+    \label{tab:attr_selection_ablation}
+    \scriptsize
+    \setlength{\tabcolsep}{3pt}
+    \renewcommand{\arraystretch}{1.12}
+    \begin{adjustbox}{max width=\textwidth}
+    \begin{tabular}{@{}lcccccccc@{}}
+        \hline
+        \textbf{Method} & \textbf{\#Attr} & \textbf{FPA} & \textbf{Species} & \textbf{Family} & \textbf{Order} & \textbf{wAP} & \textbf{TICE} & \textbf{Attr} \\
+        \hline
+        FullAttr-312 & 312 & 84.29 & 85.59 & 95.65 & 98.81 & 87.80 & \textbf{3.25} & 85.65 \\
+        Sibling-IVAS-188 & 188 & 84.02 & 85.28 & 95.69 & 98.81 & 87.56 & 3.52 & 86.95 \\
+        Random-199 mean & 199 & 84.15 & 85.45 & \textbf{95.79} & 98.95 & 87.71 & 3.33 & \textbf{91.28} \\
+        HSDAS-199 & 199 & \textbf{84.36} & \textbf{85.83} & 95.62 & \textbf{99.03} & \textbf{88.00} & 3.62 & 87.04 \\
+        \hline
+    \end{tabular}
+    \end{adjustbox}
+\end{table}
+
+Among the evaluated attribute usage strategies shown in Table \ref{tab:attr_selection_ablation}, HSDAS-199 achieves the highest species accuracy and wAP. It also achieves higher FPA than FullAttr-312, Sibling-IVAS-188, and the Random-199 mean, although Random-199 seed 2 slightly exceeds it in FPA as discussed later. Compared with FullAttr-312, HSDAS-199 improves species accuracy from 85.59\% to 85.83\% and wAP from 87.80\% to 88.00\%, while using fewer attributes. This suggests that a compact hard-sibling-aware subset can be more useful for species-level discrimination than using all available attributes. However, the improvement over FullAttr-312 is moderate, and FullAttr-312 obtains a lower TICE. Therefore, HSDAS-199 should not be interpreted as strictly better in all aspects.
+
+Compared with Sibling-IVAS-188, HSDAS-199 improves FPA, species accuracy, order accuracy, and wAP. Sibling-IVAS-188 is already a taxonomy-aware internal baseline because it compares each node with sibling-based negative sets. Therefore, the improvement of HSDAS over Sibling-IVAS suggests that explicitly emphasizing hard siblings with similar class-level attribute profiles provides additional benefit for fine-grained species discrimination.
+
+The comparison with Random-199 should be interpreted carefully. HSDAS-199 improves over the Random-199 average in FPA, species accuracy, order accuracy, and wAP. It also achieves higher species accuracy than all three random seeds. However, Random-199 obtains better family accuracy and lower TICE on average, and one random seed obtains slightly higher FPA than HSDAS-199. Therefore, the result supports HSDAS as a useful species-discrimination-oriented selection strategy, but it does not support a strong claim that HSDAS dominates random selection in every metric.
+
+Attribute prediction accuracy is reported only as a diagnostic metric. Random-199 obtains the highest attribute prediction accuracy, but this does not translate into the best species accuracy or wAP. This shows that attribute prediction accuracy and final classification performance are not perfectly correlated. A random subset may contain attribute states that are easier to predict, while HSDAS selects attributes according to hard-sibling discrimination.
+
+
+
+
+
+
+
+
+
+
+
+
+
+\subsection{Effect of Attribute Subset Size}
+
+This ablation studies how the number of selected attributes affects performance. In this experiment, the HSDAS selection strategy is evaluated with different top-\(k\) settings, with the results shown in Table \ref{tab:attr_subset_size}. \textbf{HSDAS-174} is obtained by selecting the top 3 attributes for each species and then taking the union of selected attributes. \textbf{HSDAS-199} is obtained by selecting the top 5 attributes for each species. FullAttr-312 is included as the reference setting that uses all CUB attributes.
+
+\begin{table}[t]
+    \centering
+    \caption{Effect of HSDAS attribute subset size. HSDAS-174 uses top-3 attributes per species, while HSDAS-199 uses top-5 attributes per species. All settings use the official CUB train/test protocol.}
+    \label{tab:attr_subset_size}
+    \scriptsize
+    \setlength{\tabcolsep}{3pt}
+    \renewcommand{\arraystretch}{1.12}
+    \begin{adjustbox}{max width=\textwidth}
+    \begin{tabular}{@{}lcccccccc@{}}
+        \hline
+        \textbf{Method} & \textbf{\#Attr} & \textbf{FPA} & \textbf{Species} & \textbf{Family} & \textbf{Order} & \textbf{wAP} & \textbf{TICE} & \textbf{Attr} \\
+        \hline
+        HSDAS top-3 (174) 
+        & 174 & 84.29 & 85.78 & 95.50 & 98.88 & 87.93 & 3.37 & \textbf{87.42} \\
+        HSDAS top-5 (199) 
+        & 199 & \textbf{84.36} & \textbf{85.83} & 95.62 & \textbf{99.03} & \textbf{88.00} & 3.62 & 87.04 \\
+        FullAttr-312 
+        & 312 & 84.29 & 85.59 & \textbf{95.65} & 98.81 & 87.80 & \textbf{3.25} & 85.65 \\
+        \hline
+    \end{tabular}
+    \end{adjustbox}
+\end{table}
+
+The results show that increasing HSDAS selection from top-3 to top-5 attributes per species gives a small improvement in FPA, species accuracy, order accuracy, and wAP. HSDAS top-5 improves species accuracy from 85.78\% to 85.83\% and wAP from 87.93\% to 88.00\%. The gain is modest, which suggests that HSDAS top-3 already preserves most of the useful attribute supervision.
+
+However, the improvement is not uniform across all metrics. HSDAS top-3 obtains lower TICE and higher attribute prediction accuracy than HSDAS top-5. This suggests that the more compact top-3 subset may be easier for the attribute branch to predict and is associated with lower TICE in this experiment. In contrast, the top-5 subset slightly improves species-level discrimination and wAP but increases TICE.
+
+Compared with FullAttr-312, both HSDAS subsets achieve higher species accuracy and wAP while using fewer attributes. FullAttr-312 provides the best TICE and slightly higher family accuracy, but its species accuracy and wAP are lower than both HSDAS variants.
+Overall, HSDAS top-5 is selected as the main proposed setting because it achieves the best species accuracy, FPA, and wAP among the subset-size variants. However, HSDAS top-3 remains a competitive compact alternative, with better attribute prediction accuracy and lower TICE.
+
+
+
+
+
+
+
+
+
+
+\subsection{Effect of Attribute Diversity Loss}
+
+This ablation evaluates the role of the attribute attention diversity loss. It contributes to RQ4 by analyzing how diversity regularization affects species accuracy, FPA, wAP, and taxonomy consistency.
+
+\begin{table}[t]
+    \centering
+    \caption{Effect of the attribute attention diversity loss using HSDAS-199.}
+    \label{tab:diversity_loss_ablation}
+    \scriptsize
+    \setlength{\tabcolsep}{3pt}
+    \renewcommand{\arraystretch}{1.12}
+    \begin{adjustbox}{max width=\textwidth}
+    \begin{tabular}{@{}lcccccccc@{}}
+        \hline
+        \textbf{Setting} & \(\lambda_{div}\) & \textbf{FPA} & \textbf{Species} & \textbf{Family} & \textbf{Order} & \textbf{wAP} & \textbf{TICE} & \textbf{Attr} \\
+        \hline
+        HSDAS-199 without diversity 
+        & 0.0 & 84.16 & 85.47 & 95.63 & 98.62 & 87.69 & \textbf{3.14} & 87.01 \\
+        HSDAS-199 weak diversity 
+        & 0.1 & 84.02 & 85.33 & \textbf{95.79} & 98.91 & 87.62 & 3.44 & \textbf{87.46} \\
+        HSDAS-199 main setting 
+        & 0.5 & \textbf{84.36} & \textbf{85.83} & 95.62 & \textbf{99.03} & \textbf{88.00} & 3.62 & 87.04 \\
+        HSDAS-199 strong diversity 
+        & 1.0 & 84.04 & 85.33 & 95.75 & 98.79 & 87.60 & 3.40 & 86.12 \\
+        \hline
+    \end{tabular}
+    \end{adjustbox}
+\end{table}
+
+The results in Table~\ref{tab:diversity_loss_ablation} suggest that the diversity loss has a non-monotonic effect. The main setting with \(\lambda_{div}=0.5\) achieves the best FPA and species accuracy, suggesting that a moderate amount of diversity regularization can help fine-grained species discrimination. However, weaker diversity \((\lambda_{div}=0.1)\) and stronger diversity \((\lambda_{div}=1.0)\) do not improve species accuracy over the no-diversity setting. Therefore, the results do not support the claim that simply increasing diversity regularization always improves performance.
+
+The no-diversity setting obtains the lowest TICE. This indicates that the model can produce more taxonomically consistent paths when the diversity regularizer is removed. In contrast, the best species accuracy is obtained with \(\lambda_{div}=0.5\), which has higher TICE. This suggests a trade-off between species-level discrimination and taxonomy consistency.
+
+One possible explanation is that the diversity loss is intended to encourage attribute macro-parts to use more complementary graph-node evidence, which may improve species prediction. However, because family and order predictions are not directly fused with attribute features, changes in species prediction may not always be matched by corresponding changes in the coarser predictions. This can increase path inconsistency even when species accuracy improves.
+
+The result with \(\lambda_{div}=1.0\) suggests that too much diversity regularization may become harmful. A strong diversity constraint may force attention maps to spread or separate even when the image contains only a few truly discriminative cues. Therefore, the diversity loss should be treated as a regularizer that requires careful weighting rather than a universally beneficial component.
+
+
+
+
+
+
+
+\subsection{Effect of Attribute Fusion Design}
+
+This ablation directly addresses RQ4 by analyzing the contribution of auxiliary attribute supervision, species-level attribute fusion, and diversity regularization. The results are shown in Table \ref{tab:fusion_design_ablation}.
+
+\begin{table}[t]
+    \centering
+    \caption{Effect of attribute supervision, species-level fusion, and diversity regularization under the official CUB train/test protocol.}
+    \label{tab:fusion_design_ablation}
+    \scriptsize
+    \setlength{\tabcolsep}{3pt}
+    \renewcommand{\arraystretch}{1.12}
+    \begin{adjustbox}{max width=\textwidth}
+    \begin{tabular}{@{}lccccccc@{}}
+        \hline
+        \textbf{Method} & \textbf{FPA} & \textbf{Species} & \textbf{Family} & \textbf{Order} & \textbf{wAP} & \textbf{TICE} & \textbf{Attr} \\
+        \hline
+        H-CAST rerun 
+        & 82.86 & 84.55 & 95.22 & 98.74 & 86.90 & 4.35 & -- \\
+
+        \makecell[l]{No fusion\\ \(\lambda_{attr}=0.5,\lambda_{div}=0\)}
+        & 83.09 & 84.38 & 95.58 & 98.72 & 86.82 & 3.54 & \textbf{89.04} \\
+
+        \makecell[l]{Fusion\\ \(\lambda_{attr}=0,\lambda_{div}=0\)}
+        & 83.73 & 85.21 & 95.53 & 98.74 & 87.47 & 3.87 & 23.02 \\
+
+        \makecell[l]{Fusion\\ \(\lambda_{attr}=0.5,\lambda_{div}=0\)}
+        & 84.16 & 85.47 & \textbf{95.63} & 98.62 & 87.69 & \textbf{3.14} & 87.01 \\
+
+        \makecell[l]{Fusion\\ \(\lambda_{attr}=0.5,\lambda_{div}=0.5\)}
+        & \textbf{84.36} & \textbf{85.83} & 95.62 & \textbf{99.03} & \textbf{88.00} & 3.62 & 87.04 \\
+        \hline
+    \end{tabular}
+    \end{adjustbox}
+\end{table}
+
+The no-fusion setting shows that auxiliary attribute supervision alone is not sufficient to improve species classification. Although this setting obtains the highest attribute prediction accuracy, its species accuracy is 84.38\%, which is slightly lower than the H-CAST rerun. This indicates that learning to predict attributes does not automatically transfer to better species recognition unless attribute-oriented features are explicitly connected to the species classifier.
+
+The comparison between the no-fusion setting and the fusion setting with \(\lambda_{attr}=0.5\), \(\lambda_{div}=0\) shows the importance of species-level fusion. With the same attribute supervision weight and no diversity loss, adding fusion improves FPA from 83.09\% to 84.16\%, species accuracy from 84.38\% to 85.47\%, and wAP from 86.82\% to 87.69\%. This supports the design choice of concatenating the attention-pooled attribute summary with the species class token.
+
+The fusion-only setting, where \(\lambda_{attr}=0\), improves species accuracy compared with the no-fusion setting, but its attribute accuracy drops sharply to 23.02\%. This suggests that the additional fusion path can learn classification-useful features through the species classification loss, but these features are not semantically aligned with CUB attributes when attribute supervision is removed.
+
+When attribute supervision is added to the fusion model with \(\lambda_{attr}=0.5\), FPA increases from 83.73\% to 84.16\%, species accuracy increases from 85.21\% to 85.47\%, TICE decreases from 3.87\% to 3.14\%, and attribute accuracy increases from 23.02\% to 87.01\%. This suggests that attribute supervision helps align the fused representation with semantic bird traits and improves taxonomy consistency in the no-diversity setting.
+
+Adding diversity regularization with \(\lambda_{div}=0.5\) further improves FPA, species accuracy, order accuracy, and wAP. The full model achieves the best species accuracy and wAP among the fusion-design settings. However, TICE increases compared with the no-diversity fusion setting, which again indicates a trade-off between fine-grained species discrimination and taxonomy consistency.
+
+Overall, this ablation shows that the proposed model benefits from the combination of attribute supervision and species-level fusion. Attribute supervision alone learns meaningful attribute predictors but does not improve species recognition without fusion. Fusion allows attribute-oriented features to affect the species classifier, while attribute supervision encourages these features to align with the selected CUB attribute targets. The best species accuracy and wAP are obtained when attribute supervision, fusion, and diversity regularization are used together.
+
+
+
+
+
+
+
+
+
+\subsection{Random Attribute Control}
+
+Random-199 is used to test whether the performance of HSDAS-199 comes from the hard-sibling-aware selection criterion or simply from using fewer attributes than FullAttr-312. In this thesis, Random-199 is constructed as a group-matched random control. It does not sample 199 attributes uniformly from the full 312-dimensional attribute space. Instead, for each semantic attribute group, it randomly samples the same number of attribute states as the HSDAS-199 mask. Therefore, Random-199 preserves the same group-level structure and active-group coverage as HSDAS-199, while removing the hard-sibling-aware selection criterion.
+
+\begin{table}[t]
+    \centering
+    \caption{Random attribute control. Random-199 uses the same number of attributes as HSDAS-199 and preserves the same number of selected attribute states per group. Mean and standard deviation are computed over three random seeds.}
+    \label{tab:random_control}
+    \scriptsize
+    \setlength{\tabcolsep}{3pt}
+    \renewcommand{\arraystretch}{1.12}
+    \begin{adjustbox}{max width=\textwidth}
+    \begin{tabular}{@{}lcccccccc@{}}
+        \hline
+        \textbf{Method} & \textbf{\#Attr} & \textbf{FPA} & \textbf{Species} & \textbf{Family} & \textbf{Order} & \textbf{wAP} & \textbf{TICE} & \textbf{Attr} \\
+        \hline
+        Random-199 seed 1 
+        & 199 & 83.85 & 85.21 & 95.75 & 98.96 & 87.52 & 3.47 & 91.02 \\
+        Random-199 seed 2 
+        & 199 & 84.40 & 85.66 & 95.86 & 98.95 & 87.89 & 3.42 & 91.06 \\
+        Random-199 seed 3 
+        & 199 & 84.19 & 85.47 & 95.75 & 98.95 & 87.72 & 3.11 & 91.77 \\
+        \makecell[l]{Random-199\\ mean \(\pm\) std}
+        & 199 
+        & \makecell{84.15\\\(\pm 0.28\)}
+        & \makecell{85.45\\\(\pm 0.23\)}
+        & \makecell{95.79\\\(\pm 0.06\)}
+        & \makecell{98.95\\\(\pm 0.01\)}
+        & \makecell{87.71\\\(\pm 0.19\)}
+        & \makecell{3.33\\\(\pm 0.20\)}
+        & \makecell{91.28\\\(\pm 0.42\)} \\
+        HSDAS-199 
+        & 199 & \textbf{84.36} & \textbf{85.83} & 95.62 & \textbf{99.03} & \textbf{88.00} & 3.62 & 87.04 \\
+        \hline
+    \end{tabular}
+    \end{adjustbox}
+\end{table}
+
+The Random-199 control in Table~\ref{tab:random_control} shows that group-matched random subsets can be competitive. This is expected because Random-199 keeps the same number of attribute states in each semantic group as HSDAS-199. As a result, it still preserves broad coverage over color, shape, pattern, and part-related attribute groups. Therefore, this control is stronger than a purely uniform random subset over all 312 attributes, where the group distribution could become unbalanced.
+
+Random-199 seed 2 obtains slightly higher FPA than HSDAS-199. However, this does not contradict the main conclusion of this thesis. FPA depends on the joint correctness of species, family, and order predictions. HSDAS-199 achieves higher species accuracy than seed 2, improving from 85.66\% to 85.83\%, and also achieves higher wAP, improving from 87.89\% to 88.00\%. These metrics are more directly related to fine-grained species discrimination, which is the main goal of the proposed attribute selection strategy. In contrast, seed 2 obtains higher family accuracy and lower TICE, which can lead to slightly better full-path correctness in this particular run. The FPA difference is only 0.04 percentage points, corresponding to roughly two test images. Therefore, this result is better interpreted as random variation among strong group-matched attribute subsets rather than evidence that random selection is superior.
+
+Across the three random seeds, HSDAS-199 achieves higher species accuracy and wAP than every Random-199 run. It also achieves higher FPA than the Random-199 mean. This suggests that hard-sibling-aware selection provides a useful bias toward attributes that are helpful for species-level recognition. At the same time, the advantage is moderate rather than large. Since Random-199 keeps 199 out of 312 attributes and preserves the same group-level coverage as HSDAS-199, it can still contain many useful attribute states.
+
+The TICE results also show that HSDAS-199 should not be claimed to dominate random selection in every metric. All three Random-199 seeds obtain lower TICE than HSDAS-199. This means that the random subsets can produce more taxonomically consistent prediction paths in some runs, even though they do not achieve the best species accuracy or wAP. This observation is consistent with the broader trend in the ablation studies: improving species-level discrimination does not always lead to the lowest taxonomy inconsistency.
+
+The attribute accuracy of Random-199 is also higher than that of HSDAS-199. This result should be interpreted carefully. Attribute prediction accuracy measures how well the auxiliary heads predict the selected attribute states, but it does not directly measure whether those attributes are useful for species classification. Random masks may include more frequent or easier-to-predict attribute states, allowing the auxiliary attribute heads to achieve higher accuracy. In contrast, HSDAS selects attributes according to hard-sibling discriminativeness, which may produce harder attribute targets but more species-relevant supervision. This explains why HSDAS-199 has lower attribute prediction accuracy than Random-199 but higher species accuracy and wAP.
+
+Overall, the random control shows that attribute subset size and group-level coverage already provide a strong baseline. HSDAS-199 should therefore not be interpreted as outperforming random selection in every metric. Its advantage is more specific: it provides a targeted and interpretable hard-sibling-aware selection strategy that achieves higher species accuracy and wAP than all three group-matched random subsets, while also achieving higher FPA than the Random-199 mean.

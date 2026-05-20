@@ -1,0 +1,128 @@
+\chapter{INTRODUCTION}
+
+
+
+
+
+\section{Context and Motivation}
+
+Fine-grained visual classification is a specialized task in computer vision that involves identifying sub-categories within a single entry-level category. Unlike general object recognition, which differentiates between disparate classes such as automobiles and landscapes, FGVC requires the model to distinguish between highly similar categories, such as specific bird species, car models, or aircraft variants \cite{TransIFC, HierarchicalFeatureAtt}. Among these, bird image classification is widely regarded as one of the most challenging benchmarks due to the biological complexity and visual similarity inherent in the avian domain \cite{article}. The primary difficulty arises from high intra-class variance, where birds of the same species appear different due to lighting, posture, or life stages, and low inter-class variance, where distinct species share nearly identical plumage patterns and morphology \cite{Zhou_2016_CVPR, TransIFC}.
+
+This difficulty can also be understood from a recognition scenario. Given a single bird image, a non-expert observer may not know the exact species because many candidate species look similar. However, if the observer can describe a few meaningful visual traits, such as bill shape, wing pattern, head pattern, breast color, or tail shape, the recognition process becomes more constrained. These semantic traits can help narrow down the candidate species and provide evidence for distinguishing visually similar birds. Recent prompt-based and language-assisted fine-grained recognition methods follow a related idea: instead of relying only on direct category prediction, they use visual attribute descriptions or question-answering prompts as intermediate evidence for fine-grained reasoning \cite{FineR}. This suggests that semantic visual attributes can provide useful guidance when direct species recognition is difficult.
+
+CUB-200-2011 is well suited for studying this idea because it provides not only bird images and species labels, but also rich visual attribute annotations describing bird appearance \cite{wah2011cub}. These attributes include part-based and semantic properties such as bill shape, wing color, breast pattern, crown color, tail shape, and other visual traits. In a supervised setting, such attributes can be used as auxiliary semantic supervision to encourage the model representation to preserve information related to fine-grained bird traits. Importantly, in this thesis, attributes are not used as additional inputs at inference time. They are used only during training to guide representation learning.
+
+At the same time, hierarchical image classification provides another important perspective for bird recognition. Bird species are naturally organized in a biological taxonomy, and a model can be asked to predict not only the fine-grained species label but also higher-level labels such as family and order. H-CAST is a recent visually consistent hierarchical classification framework that uses superpixel-based visual grouping and fine-to-coarse graph representations to predict different taxonomy levels \cite{park2025visually}. This makes H-CAST a suitable image-based backbone for hierarchical bird classification.
+
+However, while H-CAST uses taxonomy and visual grouping to improve hierarchical prediction, it does not explicitly use the rich semantic attributes available in CUB. This leaves a gap between attribute-based fine-grained reasoning and visually consistent hierarchical classification. Motivated by this gap, this thesis investigates whether CUB attributes can be used as training-time auxiliary supervision to improve an H-CAST-based hierarchical bird classifier, especially at the species level where fine-grained visual traits are most important.
+
+
+
+\section{Problem Statement}
+
+This thesis addresses the problem of enhancing hierarchical fine-grained bird classification by effectively integrating attribute-guided feature learning into a visually consistent hierarchical framework.
+
+\begin{itemize}
+    \item Input: The system takes a single bird image from the CUB-200-2011 dataset \cite{wah2011cub} as input. CUB-200-2011 provides 200 bird species and rich visual attribute annotations. Following the H-CAST setting, this thesis uses a three-level taxonomy consisting of 13 orders, 38 families, and 200 species. During the training phase, the model is provided with the taxonomic structure and class-level attribute annotations.
+    \item Output: The model generates hierarchical predictions across three taxonomic levels: Order, Family, and Species.
+    \item Scope: The study focuses on supervised hierarchical classification within the CUB-200-2011 domain.
+    \item Assumptions: It is assumed that the hierarchical taxonomy is fixed and known beforehand. While attribute annotations are utilized to guide feature learning during training, the model must be capable of predicting class labels from raw images during inference without requiring manual attribute labels from the user.
+\end{itemize}
+
+
+
+\section{Research Gap and Research Questions}
+
+Despite progress in hierarchical classification and attribute-based learning, their integration remains under-explored in visually consistent hierarchical models. This thesis identifies three gaps. First, visually consistent hierarchical classifiers such as H-CAST improve the alignment between fine and coarse predictions, but they do not explicitly use semantic attribute supervision. Second, although CUB provides rich attributes describing local visual properties, these attributes are often treated separately from hierarchical visual parsing. Third, it remains unclear whether using all available attributes is optimal, since redundant or weakly discriminative attributes may introduce noise. Therefore, this thesis investigates whether a compact set of hard-sibling-discriminative attributes can better support hierarchical bird classification.
+
+The internal Sibling-IVAS baseline below refers to a node-vs-siblings attribute selection method based on positive occurrence rate, negative occurrence rate, and information value.
+
+To address the identified research gap, this study focuses on the following research questions:
+\begin{itemize}
+    \item \textbf{RQ1:} Can CUB bird attributes improve hierarchical bird image classification when used as auxiliary supervision in an H-CAST-based model?
+
+    \item \textbf{RQ2:} Does selecting a compact subset of discriminative attributes improve or preserve classification performance compared with using all 312 CUB attributes?
+
+    \item \textbf{RQ3:} Does hard-sibling-aware attribute selection better support fine-grained species discrimination than equally sized random attribute subsets and the internal Sibling-IVAS statistical baseline?
+
+    \item \textbf{RQ4:} How do species-level attribute-guided fusion, attribute prediction loss, and diversity regularization affect species accuracy, Full-Path Accuracy, and taxonomy consistency?
+\end{itemize}
+
+
+
+
+
+\section{Objectives}
+The primary objective of this thesis is to develop and evaluate an attribute-guided extension of the H-CAST model for fine-grained bird classification. Specifically, the study aims to:
+\begin{itemize}
+    \item Design an attribute-guided extension of H-CAST that extracts attribute-oriented features from species-level graph-node representations.
+
+    \item Implement group-specific attribute prediction heads for active CUB attribute groups and use them as auxiliary supervision during training.
+
+    \item Fuse the attention-pooled attribute representation with the species-level class token to improve fine-grained species prediction.
+
+    \item Evaluate attribute usage and selection strategies, including FullAttr-312, Sibling-IVAS-188, HSDAS-199, and Random-199.
+
+    \item Analyze the effects of attribute selection, attribute loss, diversity loss, and fusion design on species accuracy, family accuracy, order accuracy, Full-Path Accuracy, TICE, and attribute prediction accuracy.
+\end{itemize}
+
+
+
+
+
+
+\section{Scope of the Study}
+
+The scope of this research is limited to the CUB-200-2011 dataset. The study focuses on supervised hierarchical classification and does not address open-set recognition or zero-shot learning. The class-level CUB attribute annotations are used only during training to supervise the attribute prediction heads; no manually provided attribute labels are required at inference time. The proposed fusion mechanism is applied to the species-level prediction branch, while family and order predictions follow the hierarchical stages of the H-CAST backbone. The main experiments follow the official CUB-200-2011 train/test protocol used in the H-CAST benchmark. Therefore, the conclusions are limited to this dataset and should not be assumed to generalize to other hierarchical classification tasks without further evaluation.
+
+
+
+
+
+\section{Overview of the Proposed Approach}
+
+This thesis proposes an attribute-guided extension of H-CAST for hierarchical bird image classification on CUB-200-2011. The proposed model preserves the original H-CAST visual parsing pipeline, where image regions are represented by superpixel-based tokens and progressively grouped through graph pooling. This fine-to-coarse structure provides hierarchical visual representations that are suitable for predicting species, family, and order labels.
+
+On top of this image-only hierarchical backbone, the proposed method introduces an attribute-guided module at the species-level branch. Instead of using attributes as additional inputs at inference time, the model learns a set of attribute-group queries during training. Each query corresponds to one selected CUB attribute group, such as bill shape, wing color, breast pattern, or tail shape. These queries attend to the graph-node features from the species-level stage and produce attribute-oriented features. A group-specific classifier is then used to predict the retained attribute category within each active group, providing auxiliary supervision during training. To encourage attribute groups associated with different macro-parts to attend to complementary regions, the model also evaluates a diversity regularization term inspired by the diversity component of Mutual-Channel Loss \cite{Chang_2020}, which was originally proposed to encourage feature channels to focus on different discriminative regions in fine-grained classification.
+
+The resulting attribute-oriented features are aggregated using an attention-pooling mechanism conditioned on the species class token. The aggregated attribute representation is concatenated with the species-level visual representation and passed through a fusion module before the final species classifier. The family and order predictions are still produced from the original higher-level H-CAST stages, while the attribute-guided module primarily aims to improve fine-grained species discrimination.
+
+Since not all CUB attributes are equally useful for distinguishing visually similar bird species, this thesis also investigates attribute selection. In particular, the proposed Hard-Sibling Discriminative Attribute Selection (HSDAS) selects attributes that help distinguish a taxonomic node from its sibling nodes, with emphasis on hard siblings that have similar attribute profiles. The proposed method is compared against using all attributes, an internal node-vs-siblings statistical selection baseline called Sibling-IVAS, and random attribute subsets.
+
+
+
+
+
+\section{Contributions}
+
+The main contributions of this thesis are as follows:
+
+\begin{itemize}
+    \item An attribute-guided extension of the image-only H-CAST framework for hierarchical bird classification on CUB-200-2011.
+
+    \item An attribute-group query mechanism that extracts attribute-oriented representations from species-level graph-node features.
+
+    \item A species-level fusion module that combines the species class token with an attention-pooled attribute representation before species classification.
+
+    \item A study of Hard-Sibling Discriminative Attribute Selection (HSDAS), which prioritizes attributes useful for distinguishing taxonomically related and attribute-similar bird classes.
+
+    \item A comparative evaluation of multiple attribute usage strategies, including FullAttr-312, Sibling-IVAS-188, HSDAS-199, and random attribute subsets, using both accuracy and hierarchy-consistency metrics.
+
+    \item Experimental results under the official CUB train/test protocol show that the proposed attribute-guided H-CAST variants improve species accuracy and Full-Path Accuracy over the image-only H-CAST baseline, with HSDAS providing a strong discriminative attribute selection strategy.
+\end{itemize}
+
+
+
+
+
+
+\section{Thesis Organization}
+
+The remainder of this thesis is organized as follows:
+
+\begin{itemize}
+    \item \textbf{Chapter 2} reviews the theoretical background and related work in fine-grained visual classification, hierarchical image classification, and attribute-based learning.
+    \item \textbf{Chapter 3} presents the proposed attribute-guided H-CAST framework, including the attribute prediction module, feature fusion mechanism, and the HSDAS attribute selection strategy.
+    \item \textbf{Chapter 4} describes the experimental setup, performance metrics, and a discussion of the findings and ablation studies.
+    \item \textbf{Chapter 5} summarizes the thesis and discusses limitations and future work.
+\end{itemize}

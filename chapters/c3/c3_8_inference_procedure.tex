@@ -1,0 +1,62 @@
+\section{Inference Procedure}
+
+Although the attribute branch is trained with attribute labels, the inference process remains image-only. At test time, the model receives only an input image. The initial superpixel segmentation required by the H-CAST/CAST backbone \cite{ke2024learning, park2025visually} is generated automatically from the image and is not manually provided.
+
+Given an input image \(x\), the model first computes hierarchical visual representations using the H-CAST backbone. The backbone produces class-token and graph-node features at different stages of the visual hierarchy. The family and order predictions are obtained from the corresponding H-CAST stages, following the original hierarchical classification pipeline.
+
+For species prediction, the model additionally uses the attribute-guided module. The attribute-group queries attend to the species-level graph-node features and produce attribute-oriented representations internally. These representations are not compared with ground-truth attribute labels during inference, since attribute labels are not used at test time. Instead, they are used only as learned visual features.
+
+The attribute-oriented features are aggregated by the attention-pooling module to obtain an attribute summary vector. This summary vector is concatenated with the species-level class token, and the concatenated representation is passed through the fusion MLP to obtain the fused species feature:
+\begin{equation}
+    \mathbf{h}^{s}_{fused}
+    =
+    \mathrm{MLP}_{fuse}
+    \left(
+        [\mathbf{c}^{s}; \mathbf{h}^{a}_{sum}]
+    \right).
+\end{equation}
+
+The final species logits are then computed from the fused species feature:
+\begin{equation}
+    \mathbf{z}^{s}
+    =
+    f_s(\mathbf{h}^{s}_{fused}).
+\end{equation}
+
+The family and order logits are computed from the original H-CAST hierarchical stages:
+\begin{equation}
+    \mathbf{z}^{f}
+    =
+    f_f(\mathbf{c}^{f}),
+    \qquad
+    \mathbf{z}^{o}
+    =
+    f_o(\mathbf{c}^{o}).
+\end{equation}
+
+The predicted labels are obtained by taking the class with the highest logit value at each level:
+\begin{equation}
+    \hat{y}^{s}
+    =
+    \arg\max_{c \in \mathcal{Y}^{s}} z^{s}_{c},
+    \qquad
+    \hat{y}^{f}
+    =
+    \arg\max_{c \in \mathcal{Y}^{f}} z^{f}_{c},
+    \qquad
+    \hat{y}^{o}
+    =
+    \arg\max_{c \in \mathcal{Y}^{o}} z^{o}_{c}.
+\end{equation}
+
+Therefore, the model produces predictions for all three taxonomy levels:
+\begin{equation}
+    (\hat{y}^{s}, \hat{y}^{f}, \hat{y}^{o}),
+\end{equation}
+following the notation used in the problem formulation. When reported as a root-to-leaf taxonomy path, the same prediction can also be written as
+\begin{equation}
+    (\hat{y}^{o}, \hat{y}^{f}, \hat{y}^{s}),
+\end{equation}
+corresponding to order, family, and species. The attribute branch contributes to the prediction only through its learned internal representations. It does not require attribute annotations, manual attribute descriptions, or any additional non-image input during inference.
+
+This design preserves the practical inference setting of the original H-CAST model. The proposed attribute-guided module improves representation learning during training, but deployment remains the same as a standard image-based hierarchical classifier.

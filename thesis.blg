@@ -1,0 +1,53 @@
+This is BibTeX, Version 0.99e (TeX Live 2026)
+Capacity: max_strings=200000, hash_size=200000, hash_prime=170003
+The top-level auxiliary file: thesis.aux
+The style file: plainnat.bst
+Database file #1: references.bib
+Warning--string name "july" is undefined
+--line 23 of file references.bib
+Warning--string name "july" is undefined
+--line 157 of file references.bib
+Warning--I didn't find a database entry for "FineR"
+Warning--can't use both volume and number fields in liu2017localizing
+You've used 43 entries,
+            2773 wiz_defined-function locations,
+            856 strings with 14324 characters,
+and the built_in function-call counts, 27729 in all, are:
+= -- 2485
+> -- 1789
+< -- 36
++ -- 599
+- -- 555
+* -- 2283
+:= -- 4013
+add.period$ -- 152
+call.type$ -- 43
+change.case$ -- 312
+chr.to.int$ -- 42
+cite$ -- 87
+duplicate$ -- 1239
+empty$ -- 2074
+format.name$ -- 608
+if$ -- 6030
+int.to.chr$ -- 2
+int.to.str$ -- 1
+missing$ -- 43
+newline$ -- 242
+num.names$ -- 172
+pop$ -- 664
+preamble$ -- 1
+purify$ -- 270
+quote$ -- 0
+skip$ -- 1090
+stack$ -- 0
+substring$ -- 1239
+swap$ -- 347
+text.length$ -- 29
+text.prefix$ -- 0
+top$ -- 0
+type$ -- 468
+warning$ -- 1
+while$ -- 207
+width$ -- 0
+write$ -- 606
+(There were 4 warnings)

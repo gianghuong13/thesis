@@ -1,0 +1,9 @@
+\babel@toc {english}{}\relax 
+\addvspace {10\p@ }
+\addvspace {10\p@ }
+\addvspace {10\p@ }
+\contentsline {figure}{\numberline {3.1}{\ignorespaces Overview of the proposed attribute-guided H-CAST framework. The H-CAST backbone extracts hierarchical visual representations from the input image. Attribute-group queries attend to species-level graph-node features and produce attribute-oriented representations. These representations are supervised by group-specific attribute prediction heads and fused with the species-level class token for final species prediction. Family and order predictions are produced from the original H-CAST hierarchy. Attribute labels are used only during training.}}{30}{figure.caption.2}%
+\addvspace {10\p@ }
+\contentsline {figure}{\numberline {4.1}{\ignorespaces Representative intra-family species confusions corrected by the proposed model. In each example, H-CAST predicts an incorrect species while still predicting the correct family, whereas the proposed attribute-guided model predicts the correct species.}}{83}{figure.caption.14}%
+\contentsline {figure}{\numberline {4.2}{\ignorespaces Diagnostic visualization of the attribute-guided module.}}{87}{figure.caption.15}%
+\contentsline {figure}{\numberline {4.3}{\ignorespaces Representative limitation case for high-weight global morphology groups. From left to right, the figure shows the original image, the spatial attention map of \textit {shape}, the spatial attention map of \textit {size}, and the spatial attention map of \textit {back pattern}. In this example, the \textit {shape} and \textit {size} queries place substantial attention on background regions. This indicates that these maps should be interpreted as diagnostic internal attention patterns rather than ground-truth localization of size or shape.}}{88}{figure.caption.16}%

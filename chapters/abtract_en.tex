@@ -1,0 +1,19 @@
+\begin{center}
+\textbf{\large{Abstract}}
+\end{center}
+
+\addcontentsline{toc}{chapter}{Abstract}
+\begin{small}
+
+Fine-grained bird image classification is challenging because visually similar species often differ only in subtle traits such as bill shape, wing pattern, head pattern, breast color, or tail shape. In a hierarchical classification setting, the model must also predict higher taxonomic levels such as family and order, while maintaining consistency across the taxonomy. This thesis studies hierarchical bird classification on CUB-200-2011 and investigates whether semantic attribute information can improve an H-CAST-based hierarchical classifier.
+
+This thesis proposes an attribute-guided extension of H-CAST. The proposed method keeps H-CAST as the image-based hierarchical backbone and adds an attribute-guided learning module to the species-level branch. CUB attributes are organized into semantic groups, and each active group is supervised by a group-specific attribute classifier. The learned attribute-oriented features are fused with the species class token to improve fine-grained species prediction. The model uses class-level CUB attributes only as auxiliary supervision during training, while inference remains image-based. In addition, this thesis introduces Hard-Sibling Discriminative Attribute Selection, which selects attributes that help distinguish visually similar sibling species within the same family. A diversity regularization term is also studied to reduce redundancy among attribute-group attention patterns.
+
+Experiments are conducted on the official CUB-200-2011 train/test split. Compared with the H-CAST rerun, the proposed attribute-guided H-CAST improves Full-Path Accuracy from 82.86\% to 84.36\%, species accuracy from 84.55\% to 85.83\%, family accuracy from 95.22\% to 95.62\%, order accuracy from 98.74\% to 99.03\%, and weighted Average Precision from 86.90\% to 88.00\%. Tree-based InConsistency Error is also reduced from 4.35\% to 3.62\%. Ablation studies show that attribute supervision and species-level fusion are both important, while diversity regularization improves species accuracy and wAP at a moderate weight but remains sensitive to the loss configuration. Prediction-level analysis further shows that the proposed model corrects 236 species-level errors made by the H-CAST rerun, including 194 intra-family species confusions.
+
+Overall, the results demonstrate that semantic attribute guidance can improve H-CAST-based hierarchical bird classification, especially at the species level. However, diagnostic attention analysis shows that the model should not be interpreted as a precise attribute localization method, suggesting future work with stronger object- or part-level supervision.
+
+\vspace*{1cm}
+\textbf{Keywords}: Fine-grained visual classification, hierarchical image classification, bird species recognition, visual attributes, H-CAST.
+
+\end{small}

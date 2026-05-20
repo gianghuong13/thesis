@@ -1,0 +1,242 @@
+\begin{thebibliography}{43}
+\providecommand{\natexlab}[1]{#1}
+\providecommand{\url}[1]{\texttt{#1}}
+\expandafter\ifx\csname urlstyle\endcsname\relax
+  \providecommand{\doi}[1]{doi: #1}\else
+  \providecommand{\doi}{doi: \begingroup \urlstyle{rm}\Url}\fi
+
+\bibitem[Akata et~al.(2013)Akata, Perronnin, Harchaoui, and Schmid]{akata2013labelembedding}
+Zeynep Akata, Florent Perronnin, Zaid Harchaoui, and Cordelia Schmid.
+\newblock Label-embedding for attribute-based classification.
+\newblock In \emph{2013 IEEE Conference on Computer Vision and Pattern Recognition}, pages 819--826, 2013.
+\newblock \doi{10.1109/CVPR.2013.111}.
+
+\bibitem[Akata et~al.(2016)Akata, Perronnin, Harchaoui, and Schmid]{Akata_2016}
+Zeynep Akata, Florent Perronnin, Zaid Harchaoui, and Cordelia Schmid.
+\newblock Label-embedding for image classification.
+\newblock \emph{IEEE Transactions on Pattern Analysis and Machine Intelligence}, 38\penalty0 (7):\penalty0 1425–1438, 2016.
+\newblock ISSN 2160-9292.
+\newblock \doi{10.1109/tpami.2015.2487986}.
+\newblock URL \url{http://dx.doi.org/10.1109/TPAMI.2015.2487986}.
+
+\bibitem[Bertinetto et~al.(2020)Bertinetto, Mueller, Tertikas, Samangooei, and Lord]{bertinetto2020making}
+Luca Bertinetto, Romain Mueller, Konstantinos Tertikas, Sina Samangooei, and Nicholas~A Lord.
+\newblock Making better mistakes: Leveraging class hierarchies with deep networks.
+\newblock In \emph{Proceedings of the IEEE/CVF conference on computer vision and pattern recognition}, pages 12506--12515, 2020.
+
+\bibitem[Chang et~al.(2020)Chang, Ding, Xie, Bhunia, Li, Ma, Wu, Guo, and Song]{Chang_2020}
+Dongliang Chang, Yifeng Ding, Jiyang Xie, Ayan~Kumar Bhunia, Xiaoxu Li, Zhanyu Ma, Ming Wu, Jun Guo, and Yi-Zhe Song.
+\newblock The devil is in the channels: Mutual-channel loss for fine-grained image classification.
+\newblock \emph{IEEE Transactions on Image Processing}, 29:\penalty0 4683–4695, 2020.
+\newblock ISSN 1941-0042.
+\newblock \doi{10.1109/tip.2020.2973812}.
+\newblock URL \url{http://dx.doi.org/10.1109/TIP.2020.2973812}.
+
+\bibitem[Chang et~al.(2021)Chang, Pang, Zheng, Ma, Song, and Guo]{chang2021your}
+Dongliang Chang, Kaiyue Pang, Yixiao Zheng, Zhanyu Ma, Yi-Zhe Song, and Jun Guo.
+\newblock Your" flamingo" is my" bird": Fine-grained, or not.
+\newblock In \emph{Proceedings of the IEEE/CVF conference on computer vision and pattern recognition}, pages 11476--11485, 2021.
+
+\bibitem[Chen et~al.(2022)Chen, Wang, Liu, and Qian]{Chen_2022_CVPR}
+Jingzhou Chen, Peng Wang, Jian Liu, and Yuntao Qian.
+\newblock Label relation graphs enhanced hierarchical residual network for hierarchical multi-granularity classification.
+\newblock In \emph{Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR)}, pages 4858--4867, June 2022.
+
+\bibitem[Dosovitskiy et~al.(2020)Dosovitskiy, Beyer, Kolesnikov, Weissenborn, Zhai, Unterthiner, Dehghani, Minderer, Heigold, Gelly, et~al.]{dosovitskiy2020image}
+Alexey Dosovitskiy, Lucas Beyer, Alexander Kolesnikov, Dirk Weissenborn, Xiaohua Zhai, Thomas Unterthiner, Mostafa Dehghani, Matthias Minderer, Georg Heigold, Sylvain Gelly, et~al.
+\newblock An image is worth 16x16 words: Transformers for image recognition at scale.
+\newblock \emph{arXiv preprint arXiv:2010.11929}, 2020.
+
+\bibitem[Farhadi et~al.(2009)Farhadi, Endres, Hoiem, and Forsyth]{farhadi2009attributes}
+Ali Farhadi, Ian Endres, Derek Hoiem, and David Forsyth.
+\newblock Describing objects by their attributes.
+\newblock In \emph{2009 IEEE Conference on Computer Vision and Pattern Recognition}, pages 1778--1785, 2009.
+\newblock \doi{10.1109/CVPR.2009.5206772}.
+
+\bibitem[Fu et~al.(2017)Fu, Zheng, and Mei]{fu2017racnn}
+Jianlong Fu, Heliang Zheng, and Tao Mei.
+\newblock Look closer to see better: Recurrent attention convolutional neural network for fine-grained image recognition.
+\newblock In \emph{2017 IEEE Conference on Computer Vision and Pattern Recognition (CVPR)}, pages 4476--4484, 2017.
+\newblock \doi{10.1109/CVPR.2017.476}.
+
+\bibitem[Han et~al.(2018)Han, Guo, Zhang, and Zhu]{han2018attribute}
+Kai Han, Jianyuan Guo, Chao Zhang, and Mingjian Zhu.
+\newblock Attribute-aware attention model for fine-grained representation learning.
+\newblock In \emph{Proceedings of the 26th ACM international conference on Multimedia}, pages 2040--2048, 2018.
+
+\bibitem[He and Peng(2017)]{He_2017}
+Xiangteng He and Yuxin Peng.
+\newblock Fine-grained image classification via combining vision and language.
+\newblock In \emph{2017 IEEE Conference on Computer Vision and Pattern Recognition (CVPR)}, page 7332–7340. IEEE, 2017.
+\newblock \doi{10.1109/cvpr.2017.775}.
+\newblock URL \url{http://dx.doi.org/10.1109/CVPR.2017.775}.
+
+\bibitem[Huynh and Elhamifar(2020)]{huynh2020DenseAttribute}
+Dat Huynh and Ehsan Elhamifar.
+\newblock Fine-grained generalized zero-shot learning via dense attribute-based attention.
+\newblock In \emph{2020 IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR)}, pages 4482--4492, 2020.
+\newblock \doi{10.1109/CVPR42600.2020.00454}.
+
+\bibitem[Jiang et~al.(2024)Jiang, Yang, Zhang, and Zhang]{jiang2024hierarchical}
+Juan Jiang, Jingmin Yang, Wenjie Zhang, and Hongbin Zhang.
+\newblock Hierarchical multi-granularity classification based on bidirectional knowledge transfer.
+\newblock \emph{Multimedia Systems}, 30\penalty0 (4):\penalty0 207, 2024.
+
+\bibitem[Ke et~al.(2024)Ke, Mo, and Yu]{ke2024learning}
+Tsung-Wei Ke, Sangwoo Mo, and Stella Yu.
+\newblock Learning hierarchical image segmentation for recognition and by recognition.
+\newblock In \emph{International Conference on Learning Representations}, volume 2024, pages 39881--39919, 2024.
+
+\bibitem[Kira and Rendell(1992)]{kira1992practical}
+Kenji Kira and Larry~A Rendell.
+\newblock A practical approach to feature selection.
+\newblock In \emph{Machine learning proceedings 1992}, pages 249--256. Elsevier, 1992.
+
+\bibitem[Kodirov et~al.(2017)Kodirov, Xiang, and Gong]{kodirov2017semantic}
+Elyor Kodirov, Tao Xiang, and Shaogang Gong.
+\newblock Semantic autoencoder for zero-shot learning.
+\newblock In \emph{Proceedings of the IEEE conference on computer vision and pattern recognition}, pages 3174--3183, 2017.
+
+\bibitem[Kononenko(1994)]{kononenko1994estimating}
+Igor Kononenko.
+\newblock Estimating attributes: Analysis and extensions of relief.
+\newblock In \emph{European conference on machine learning}, pages 171--182. Springer, 1994.
+
+\bibitem[Lampert et~al.(2009)Lampert, Nickisch, and Harmeling]{lampert2009attributetransfer}
+Christoph~H. Lampert, Hannes Nickisch, and Stefan Harmeling.
+\newblock Learning to detect unseen object classes by between-class attribute transfer.
+\newblock In \emph{2009 IEEE Conference on Computer Vision and Pattern Recognition}, pages 951--958, 2009.
+\newblock \doi{10.1109/CVPR.2009.5206594}.
+
+\bibitem[Lampert et~al.(2014)Lampert, Nickisch, and Harmeling]{lampert2014attributebased}
+Christoph~H. Lampert, Hannes Nickisch, and Stefan Harmeling.
+\newblock Attribute-based classification for zero-shot visual object categorization.
+\newblock \emph{IEEE Transactions on Pattern Analysis and Machine Intelligence}, 36\penalty0 (3):\penalty0 453--465, 2014.
+\newblock \doi{10.1109/TPAMI.2013.140}.
+
+\bibitem[Lin et~al.(2015)Lin, RoyChowdhury, and Maji]{lin2015bilinear}
+Tsung-Yu Lin, Aruni RoyChowdhury, and Subhransu Maji.
+\newblock Bilinear cnn models for fine-grained visual recognition.
+\newblock In \emph{Proceedings of the IEEE international conference on computer vision}, pages 1449--1457, 2015.
+
+\bibitem[Liu et~al.(2025)Liu, Zhang, Deng, Xie, Liu, and Li]{TransIFC}
+Hai Liu, Cheng Zhang, Yongjian Deng, Bochen Xie, Tingting Liu, and You-Fu Li.
+\newblock Transifc: Invariant cues-aware feature concentration learning for efficient fine-grained bird image classification.
+\newblock \emph{IEEE Transactions on Multimedia}, 27:\penalty0 1677--1690, 2025.
+\newblock \doi{10.1109/TMM.2023.3238548}.
+
+\bibitem[Liu et~al.(2017)Liu, Wang, Wen, Ding, and Lin]{liu2017localizing}
+Xiao Liu, Jiang Wang, Shilei Wen, Errui Ding, and Yuanqing Lin.
+\newblock Localizing by describing: Attribute-guided attention localization for fine-grained recognition.
+\newblock In \emph{Proceedings of the AAAI conference on artificial intelligence}, volume~31, 2017.
+
+\bibitem[Mall et~al.(2021)Mall, Hariharan, and Bala]{mall2021field}
+Utkarsh Mall, Bharath Hariharan, and Kavita Bala.
+\newblock Field-guide-inspired zero-shot learning.
+\newblock In \emph{Proceedings of the IEEE/CVF International Conference on Computer Vision}, pages 9546--9555, 2021.
+
+\bibitem[Park et~al.(2025)Park, Zhang, Yu, Beery, and Huang]{park2025visually}
+Seulki Park, Youren Zhang, Stella Yu, Sara Beery, and Jonathan Huang.
+\newblock Visually consistent hierarchical image classification.
+\newblock In \emph{International Conference on Learning Representations}, volume 2025, pages 20808--20830, 2025.
+
+\bibitem[Peng et~al.(2005)Peng, Long, and Ding]{peng2005feature}
+Hanchuan Peng, Fuhui Long, and Chris Ding.
+\newblock Feature selection based on mutual information criteria of max-dependency, max-relevance, and min-redundancy.
+\newblock \emph{IEEE Transactions on pattern analysis and machine intelligence}, 27\penalty0 (8):\penalty0 1226--1238, 2005.
+
+\bibitem[Reed et~al.(2016)Reed, Akata, Lee, and Schiele]{reed2016learning}
+Scott Reed, Zeynep Akata, Honglak Lee, and Bernt Schiele.
+\newblock Learning deep representations of fine-grained visual descriptions.
+\newblock In \emph{Proceedings of the IEEE conference on computer vision and pattern recognition}, pages 49--58, 2016.
+
+\bibitem[Siddiqi(2012)]{siddiqi2012credit}
+Naeem Siddiqi.
+\newblock \emph{Credit risk scorecards: developing and implementing intelligent credit scoring}.
+\newblock John Wiley \& Sons, 2012.
+
+\bibitem[Silla~Jr and Freitas(2011)]{silla2011survey}
+Carlos~N Silla~Jr and Alex~A Freitas.
+\newblock A survey of hierarchical classification across different application domains.
+\newblock \emph{Data mining and knowledge discovery}, 22\penalty0 (1):\penalty0 31--72, 2011.
+
+\bibitem[Van~den Bergh et~al.(2015)Van~den Bergh, Boix, Roig, and Van~Gool]{van2015seeds}
+Michael Van~den Bergh, Xavier Boix, Gemma Roig, and Luc Van~Gool.
+\newblock Seeds: Superpixels extracted via energy-driven sampling.
+\newblock \emph{International Journal of Computer Vision}, 111\penalty0 (3):\penalty0 298--314, 2015.
+
+\bibitem[Vaswani et~al.(2017)Vaswani, Shazeer, Parmar, Uszkoreit, Jones, Gomez, Kaiser, and Polosukhin]{vaswani2017attention}
+Ashish Vaswani, Noam Shazeer, Niki Parmar, Jakob Uszkoreit, Llion Jones, Aidan~N Gomez, {\L}ukasz Kaiser, and Illia Polosukhin.
+\newblock Attention is all you need.
+\newblock \emph{Advances in neural information processing systems}, 30, 2017.
+
+\bibitem[Wah et~al.(2011)Wah, Branson, Welinder, Perona, and Belongie]{wah2011cub}
+Catherine Wah, Steve Branson, Peter Welinder, Pietro Perona, and Serge Belongie.
+\newblock The caltech-ucsd birds-200-2011 dataset.
+\newblock Technical Report CNS-TR-2011-001, California Institute of Technology, 2011.
+
+\bibitem[Wang et~al.(2023{\natexlab{a}})Wang, Zou, Zhang, Zhu, and Jing]{wang2023consistency}
+Rui Wang, Cong Zou, Weizhong Zhang, Zixuan Zhu, and Lihua Jing.
+\newblock Consistency-aware feature learning for hierarchical fine-grained visual classification.
+\newblock In \emph{Proceedings of the 31st ACM International Conference on Multimedia}, pages 2326--2334, 2023{\natexlab{a}}.
+
+\bibitem[Wang et~al.(2023{\natexlab{b}})Wang, Sun, Li, and Yang]{wang2023transhp}
+Wenhao Wang, Yifan Sun, Wei Li, and Yi~Yang.
+\newblock Trans{HP}: Image classification with hierarchical prompting.
+\newblock In \emph{Thirty-seventh Conference on Neural Information Processing Systems}, 2023{\natexlab{b}}.
+\newblock URL \url{https://openreview.net/forum?id=vpQuCsZXz2}.
+
+\bibitem[Wei et~al.(2022)Wei, Song, Aodha, Wu, Peng, Tang, Yang, and Belongie]{Fine-grainedSurvey}
+Xiu-Shen Wei, Yi-Zhe Song, Oisin~Mac Aodha, Jianxin Wu, Yuxin Peng, Jinhui Tang, Jian Yang, and Serge Belongie.
+\newblock Fine-grained image analysis with deep learning: A survey.
+\newblock \emph{IEEE Transactions on Pattern Analysis and Machine Intelligence}, 44\penalty0 (12):\penalty0 8927--8948, 2022.
+\newblock \doi{10.1109/TPAMI.2021.3126648}.
+
+\bibitem[Yan et~al.(2023)Yan, Wang, Zhong, Dong, He, Lu, Wang, Shang, and McAuley]{yan2023learning}
+An~Yan, Yu~Wang, Yiwu Zhong, Chengyu Dong, Zexue He, Yujie Lu, William~Yang Wang, Jingbo Shang, and Julian McAuley.
+\newblock Learning concise and descriptive attributes for visual recognition.
+\newblock In \emph{Proceedings of the IEEE/CVF International Conference on Computer Vision}, pages 3090--3100, 2023.
+
+\bibitem[Yang et~al.(2018)Yang, Luo, Wang, Hu, Gao, and Wang]{yang2018learning}
+Ze~Yang, Tiange Luo, Dong Wang, Zhiqiang Hu, Jun Gao, and Liwei Wang.
+\newblock Learning to navigate for fine-grained classification.
+\newblock In \emph{Proceedings of the European conference on computer vision (ECCV)}, pages 420--435, 2018.
+
+\bibitem[Yeong~Han et~al.(2025)Yeong~Han, Moo~Yi, Tae~Kim, and Young~Choi]{HierarchicalFeatureAtt}
+A.~Yeong~Han, Kwang Moo~Yi, Kyeong Tae~Kim, and Jae Young~Choi.
+\newblock Hierarchical feature attention learning network for detecting object and discriminative parts in fine-grained visual classification.
+\newblock \emph{IEEE Access}, 13:\penalty0 19533--19544, 2025.
+\newblock \doi{10.1109/ACCESS.2025.3534444}.
+
+\bibitem[Yun et~al.(2019)Yun, Han, Oh, Chun, Choe, and Yoo]{yun2019cutmix}
+Sangdoo Yun, Dongyoon Han, Seong~Joon Oh, Sanghyuk Chun, Junsuk Choe, and Youngjoon Yoo.
+\newblock Cutmix: Regularization strategy to train strong classifiers with localizable features.
+\newblock In \emph{Proceedings of the IEEE/CVF international conference on computer vision}, pages 6023--6032, 2019.
+
+\bibitem[Zhang et~al.(2017)Zhang, Cisse, Dauphin, and Lopez-Paz]{zhang2017mixup}
+Hongyi Zhang, Moustapha Cisse, Yann~N Dauphin, and David Lopez-Paz.
+\newblock mixup: Beyond empirical risk minimization.
+\newblock \emph{arXiv preprint arXiv:1710.09412}, 2017.
+
+\bibitem[Zhang et~al.(2014)Zhang, Donahue, Girshick, and Darrell]{zhang2014part}
+Ning Zhang, Jeff Donahue, Ross Girshick, and Trevor Darrell.
+\newblock Part-based r-cnns for fine-grained category detection.
+\newblock In \emph{European conference on computer vision}, pages 834--849. Springer, 2014.
+
+\bibitem[Zhao et~al.(2017)Zhao, Zhu, Wang, and Hu]{zhao2017hierarchical}
+Hong Zhao, Pengfei Zhu, Ping Wang, and Qinghua Hu.
+\newblock Hierarchical feature selection with recursive regularization.
+\newblock In \emph{IJCAI}, volume 2017, pages 3483--3489, 2017.
+
+\bibitem[Zhou and Lin(2016)]{Zhou_2016_CVPR}
+Feng Zhou and Yuanqing Lin.
+\newblock Fine-grained image classification by exploring bipartite-graph labels.
+\newblock In \emph{Proceedings of the IEEE Conference on Computer Vision and Pattern Recognition (CVPR)}, June 2016.
+
+\bibitem[Zhu et~al.(2020)Zhu, Min, and Jiang]{article}
+Yaohui Zhu, Weiqing Min, and Shuqiang Jiang.
+\newblock Attribute-guided feature learning for few-shot image recognition.
+\newblock \emph{IEEE Transactions on Multimedia}, PP:\penalty0 1--1, 05 2020.
+\newblock \doi{10.1109/TMM.2020.2993952}.
+
+\end{thebibliography}

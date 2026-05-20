@@ -1,0 +1,380 @@
+\chapter{EXPERIMENTS AND EVALUATION}
+\label{chap:experiment}
+
+\section{Research Questions}
+
+The experiments in this chapter are designed to answer the following research questions:
+
+\begin{itemize}
+    \item \textbf{RQ1:} Does the proposed attribute-guided H-CAST improve hierarchical bird classification compared with the image-only H-CAST baseline under the official CUB-200-2011 train/test protocol?
+
+    \item \textbf{RQ2:} Does using a compact selected attribute subset preserve or improve performance compared with using all 312 CUB attributes?
+
+    \item \textbf{RQ3:} Does the proposed HSDAS strategy outperform equally sized random subsets and the internal Sibling-IVAS statistical baseline?
+
+    \item \textbf{RQ4:} How do the proposed attribute-guided components, including species-level fusion, auxiliary attribute prediction, and diversity regularization, affect species accuracy, Full-Path Accuracy, wAP, TICE, and attribute prediction accuracy?
+\end{itemize}
+
+These questions correspond directly to the main goals of this thesis. RQ1 evaluates whether attribute-guided learning improves the image-only hierarchical baseline. RQ2 studies whether the proposed hard-sibling-aware attribute selection is more effective than using all attributes, random subsets, or earlier internal selection baselines that do not explicitly model hard siblings. RQ3 analyzes the role of the diversity regularization term. RQ4 examines how the attribute branch contributes to the final prediction behavior, including both classification performance and auxiliary attribute prediction quality.
+
+
+\section{Dataset and Experimental Protocol}
+
+This section describes the dataset, taxonomy structure, attribute annotations, train/test protocol, and implementation details used in the experiments. The main experiments are conducted on the CUB-200-2011 dataset and follow the official train/test split used in the H-CAST benchmark. This choice ensures that the results are directly comparable with the image-only H-CAST baseline and the reported results of the original H-CAST paper.
+
+
+\subsection{CUB-200-2011}
+
+The experiments are conducted on the Caltech-UCSD Birds-200-2011 dataset, commonly referred to as CUB-200-2011 \cite{wah2011cub}. CUB-200-2011 is a standard benchmark for fine-grained bird image classification. It contains 200 bird species and 11,788 images. The official split consists of 5,994 training images and 5,794 test images.
+
+CUB-200-2011 is suitable for this thesis for three reasons. First, it is a fine-grained classification dataset where many classes are visually similar and differ only in subtle local traits. Second, the dataset provides rich attribute annotations describing bird appearance, which makes it possible to study attribute-guided representation learning. Third, the bird species can be organized into a biological taxonomy, allowing the task to be formulated as hierarchical classification rather than flat species classification.
+
+In this thesis, each input image is associated with three taxonomic labels: order, family, and species. The model is trained to predict all three levels. The species label is the finest and most difficult prediction target, while family and order represent coarser taxonomic levels.
+
+
+\subsection{Taxonomy and Attribute Annotations}
+
+Following the H-CAST setting, the CUB-200-2011 species are organized into a three-level hierarchy consisting of 13 orders, 38 families, and 200 species \cite{park2025visually}. Each species belongs to exactly one family, and each family belongs to exactly one order. Therefore, each image has a valid taxonomy path:
+\begin{equation}
+    y^{o} \rightarrow y^{f} \rightarrow y^{s},
+\end{equation}
+where \(y^{o}\), \(y^{f}\), and \(y^{s}\) denote the order, family, and species labels, respectively.
+
+In addition to class labels, CUB-200-2011 provides 312 visual attributes. These attributes describe bird traits such as bill shape, wing color, breast pattern, tail shape, head pattern, eye color, belly color, crown color, and other part-based properties. In this thesis, the 312 attributes are organized into 28 semantic groups based on their attribute names. Each group corresponds to one type of bird trait, and each attribute within a group represents one possible state of that trait.
+
+The proposed model does not use attributes as manual inputs during inference. Instead, class-level attribute annotations are used during training as auxiliary supervision. For an image belonging to species \(c\), the attribute target is obtained from the class-level attribute vector of that species. This setting is consistent with the goal of improving image-based hierarchical classification without requiring users to provide attribute labels at test time.
+
+Several attribute usage strategies are evaluated in this chapter. \textbf{FullAttr-312} uses all 312 CUB attributes. \textbf{Sibling-IVAS-188} is an internal node-vs-siblings statistical selection baseline implemented during this thesis. It uses train-only image-level binary attribute annotations and ranks attributes primarily by positive occurrence-rate difference between a target taxonomy node and its corresponding negative set, with Information Value used as a secondary criterion. \textbf{HSDAS-199} selects attributes based on species-level hard-sibling discrimination using class-level continuous attribute profiles. \textbf{Random-199} is used as a control to test whether the benefit comes from the HSDAS selection criterion or merely from reducing the number of attributes.
+
+
+\subsection{Train/Test Protocol}
+
+The main results in this thesis follow the official CUB-200-2011 train/test protocol. The model is trained on the official training split and evaluated on the official test split. No separate validation set is used for the main reported comparison. This choice follows the experimental setting of H-CAST and allows a direct comparison between the proposed attribute-guided model and the image-only H-CAST baseline.
+
+This protocol is important because the original CUB-200-2011 benchmark and the H-CAST experiments report results using the official train/test split. If a separate validation set were created by splitting the training set, the model would be trained on fewer images, and the resulting numbers would not be directly comparable to the H-CAST baseline trained on the full official training split. Therefore, all main tables in this chapter are reported under the official train/test setting.
+
+
+
+\subsection{Implementation Details}
+
+The implementation is based on the original CAST/H-CAST codebase. The H-CAST backbone and the hierarchical visual parsing pipeline are reused and adapted for the CUB-200-2011 setting. The main components implemented in this thesis are the attribute-group representation, HSDAS attribute selection, attribute-group queries, group-specific attribute prediction heads, species-level attribute fusion, and the attribute attention diversity loss.
+
+Unless otherwise specified, the experiments use the \texttt{cast\_small} model configuration. The model uses a convolutional stem, a patch size of 8, an embedding dimension of 384, and four hierarchical stages. The numbers of graph clusters are set to \([64, 32, 16, 8]\), and the Transformer block depths are \([3, 3, 3, 2]\). The model predicts three hierarchy levels: species, family, and order.
+
+For attribute-guided experiments, the attribute mask is loaded before model construction. If a selected attribute mask is provided, only the retained attribute states are used to define the active attribute groups and the output dimensions of the group-specific attribute classifiers. If no mask is provided, the model uses all 312 attributes grouped into the original 28 CUB attribute groups.
+
+The training objective consists of hierarchical classification loss, auxiliary attribute prediction loss, optional Tree-Path KL divergence loss, and optional attribute attention diversity loss. The attribute loss weight is denoted by \(\lambda_{attr}\), and the diversity loss weight is denoted by \(\lambda_{div}\). The default attribute-guided setting uses \(\lambda_{attr}=0.5\). Different values of \(\lambda_{div}\) are evaluated in the ablation study.
+
+The model is trained using the AdamW optimizer with cosine learning-rate scheduling. Standard data augmentation techniques from the H-CAST/DeiT training pipeline are used, including random augmentation, Mixup, CutMix, label smoothing, and random erasing when enabled by the training configuration. The input image size is \(224 \times 224\). Evaluation is performed on the official test set using the image and its corresponding superpixel segmentation input required by the CAST/H-CAST backbone.
+
+During training, the model receives images, superpixel segmentations, taxonomy labels, and class-level attribute targets. During inference, the model receives only the image because the superpixel segmentation required by CAST/H-CAST is generated automatically from the image and no ground-truth attribute labels are provided at inference time.
+
+
+
+
+
+
+\section{Compared Methods}
+
+This section describes the methods compared in the experiments. All reported results in the main comparison are obtained under the official CUB-200-2011 train/test protocol.
+
+The compared methods are divided into three groups. The first group contains image-only baselines. The second group contains attribute-guided model variants. The third group compares different attribute selection strategies used to construct the attribute supervision mask.
+
+\subsection{Image-only Baselines}
+
+The image-only baselines do not use CUB attribute annotations during training or inference. They are included to evaluate whether attribute-guided learning provides additional benefit over a standard hierarchical image classifier.
+
+\textbf{H-CAST reported by the authors.} This is the result reported in the original H-CAST paper. It serves as the external reference point for the image-only hierarchical classification setting. Since this result comes from the original paper, it is included only for comparison and is not produced by the implementation in this thesis.
+
+\textbf{H-CAST rerun.} This baseline is obtained by rerunning the image-only H-CAST model under the same CUB train/test protocol used in this thesis. It is the most important image-only baseline because it is trained and evaluated in the same experimental environment as the proposed attribute-guided models. Comparing against this rerun helps separate the effect of the proposed attribute module from differences caused by implementation or training environment.
+
+\begin{table}[t]
+    \centering
+    \caption{Image-only baselines used for comparison. Results are reported under the official CUB train/test protocol.}
+    \label{tab:image_only_baselines}
+    \begin{tabular}{l p{8.5cm}}
+        \hline
+        \textbf{Method} & \textbf{Description} \\
+        \hline
+        H-CAST reported by authors & Image-only H-CAST result reported in the original paper. Used as an external reference. \\
+        H-CAST rerun & Image-only H-CAST model rerun in this thesis under the same CUB train/test protocol. Used as the main image-only baseline. \\
+        \hline
+    \end{tabular}
+\end{table}
+
+\subsection{Attribute-guided Variants}
+
+The attribute-guided variants extend the image-only H-CAST model by adding attribute-oriented learning to the species-level branch. In all these variants, attribute labels are used only during training. During inference, the model receives only the input image and the superpixel segmentation required by the H-CAST/CAST backbone.
+
+\textbf{Attribute-guided H-CAST.} This is the main model proposed in this thesis. It uses one learnable query for each active attribute group. These queries attend to species-level graph-node features and produce attribute-oriented representations. The representations are supervised by group-specific attribute classifiers and are also fused with the species-level class token before species prediction.
+
+\textbf{Attribute-guided H-CAST without diversity loss.} This variant removes the attribute attention diversity loss by setting \(\lambda_{div}=0\). It is used to evaluate whether the diversity regularization term contributes to the final performance.
+
+\textbf{Attribute-guided H-CAST with diversity loss.} This variant enables the diversity term with \(\lambda_{div}>0\). It is used to evaluate whether encouraging different attribute macro-parts to attend to complementary graph nodes improves fine-grained classification.
+
+
+\begin{table}[t]
+    \centering
+    \caption{Attribute-guided variants considered in the experiments.}
+    \label{tab:attr_guided_variants}
+    \small
+    \setlength{\tabcolsep}{4pt}
+    \renewcommand{\arraystretch}{1.15}
+    \begin{tabularx}{\textwidth}{@{}p{3.8cm}ccX@{}}
+        \hline
+        \textbf{Variant} & \(\lambda_{attr}\) & \(\lambda_{div}\) & \textbf{Purpose} \\
+        \hline
+        Attribute-guided H-CAST w/o diversity 
+        & 0.5 & 0.0 
+        & Tests the effect of attribute supervision and species-level fusion without diversity regularization. \\
+
+        Attribute-guided H-CAST with diversity 
+        & 0.5 & 0.5 
+        & Main proposed setting with attribute supervision, species-level fusion, and diversity loss. \\
+
+        Attribute-guided H-CAST with weak diversity 
+        & 0.5 & 0.1 
+        & Tests whether a smaller diversity weight gives a better trade-off. \\
+
+        Attribute-guided H-CAST with stronger diversity 
+        & 0.5 & 1.0 
+        & Tests whether stronger diversity regularization improves or hurts performance. \\
+        \hline
+    \end{tabularx}
+\end{table}
+
+\subsection{Attribute Selection Variants}
+
+This thesis evaluates several ways of choosing the attribute subset used by the attribute-guided module. These variants are important because CUB contains 312 attributes, but not all of them are equally useful for species-level discrimination.
+
+\textbf{FullAttr-312.} This setting uses all 312 CUB attributes. It preserves the full semantic information available in the dataset, but may include redundant or weakly discriminative attributes.
+
+\textbf{HSDAS-199.} This is the main attribute selection strategy studied in this thesis. HSDAS selects attributes at the species level by combining general sibling discriminativeness and hard-sibling discriminativeness. It uses class-level continuous attribute profiles and prioritizes attributes that distinguish a species from sibling species with similar attribute profiles.
+
+\textbf{HSDAS-174.} This variant uses a smaller HSDAS-selected subset. It is included to analyze how attribute subset size affects classification performance.
+
+\textbf{Sibling-IVAS-188.} This is an internal statistical attribute-selection baseline implemented during this thesis. It uses train-only image-level binary attribute annotations and compares each taxonomy node with a corresponding negative set. For species-level nodes, the negative set consists of sibling species within the same family. Attributes are ranked primarily by positive occurrence-rate difference between the target node and the negative set, with Information Value used as a secondary criterion. This baseline is included to compare HSDAS against another taxonomy-aware but non-hard-sibling selection strategy.
+
+\textbf{Random-199.} This setting selects 199 random attributes, matching the number of attributes in HSDAS-199. It is used as a control to test whether performance changes come from the HSDAS selection criterion or merely from reducing the number of attributes.
+
+\begin{table}[t]
+    \centering
+    \caption{Attribute selection variants compared in this thesis. All variants are evaluated under the official CUB train/test protocol.}
+    \label{tab:attr_selection_variants}
+    \begin{tabular}{l c p{8cm}}
+        \hline
+        \textbf{Method} & \textbf{\#Attr} & \textbf{Description} \\
+        \hline
+        FullAttr-312 & 312 & Uses all CUB attributes. \\
+        HSDAS-199 & 199 & Main hard-sibling-aware selected subset using class-level continuous attributes. \\
+        HSDAS-174 & 174 & Smaller HSDAS-selected subset for subset-size analysis. \\
+        Sibling-IVAS-188 & 188 & Internal train-only node-vs-siblings statistical baseline using positive occurrence-rate difference and Information Value. \\
+        Random-199 & 199 & Random subset control with the same size as HSDAS-199. \\
+        \hline
+    \end{tabular}
+\end{table}
+
+
+
+
+
+
+
+\section{Evaluation Metrics}
+
+The models are evaluated using both classification accuracy and hierarchy-consistency metrics, following the H-CAST evaluation protocol \cite{park2025visually}. Since the task is hierarchical, species accuracy alone is not sufficient. A model may predict the correct species, family, or order independently, but the predicted labels may not form a valid taxonomy path. Therefore, this thesis reports level-wise accuracy, Full-Path Accuracy, Weighted Average Precision, Tree-based InConsistency Error, and attribute prediction accuracy.
+
+\subsection{Level-wise Accuracy}
+
+Level-wise accuracy measures the classification accuracy at each taxonomy level independently. In this thesis, the three reported level-wise accuracies are species accuracy, family accuracy, and order accuracy.
+
+Let \(N\) be the number of test samples. For each sample \(i\), let \(y_i^{s}\), \(y_i^{f}\), and \(y_i^{o}\) be the ground-truth species, family, and order labels. Let \(\hat{y}_i^{s}\), \(\hat{y}_i^{f}\), and \(\hat{y}_i^{o}\) be the corresponding predictions. The species accuracy is defined as
+\begin{equation}
+    Acc_s =
+    \frac{1}{N}
+    \sum_{i=1}^{N}
+    \mathbb{I}
+    \left[
+        \hat{y}_i^{s} = y_i^{s}
+    \right],
+\end{equation}
+where \(\mathbb{I}[\cdot]\) is the indicator function. Similarly, family accuracy and order accuracy are defined as
+\begin{equation}
+    Acc_f =
+    \frac{1}{N}
+    \sum_{i=1}^{N}
+    \mathbb{I}
+    \left[
+        \hat{y}_i^{f} = y_i^{f}
+    \right],
+\end{equation}
+and
+\begin{equation}
+    Acc_o =
+    \frac{1}{N}
+    \sum_{i=1}^{N}
+    \mathbb{I}
+    \left[
+        \hat{y}_i^{o} = y_i^{o}
+    \right].
+\end{equation}
+
+Species accuracy is the main fine-grained classification metric because species is the most specific label. Family and order accuracies measure performance at coarser levels. In the proposed model, the attribute-guided fusion is applied to the species-level branch, so the largest improvement is expected at the species level.
+
+\subsection{Weighted Average Precision}
+
+In addition to level-wise accuracy, this thesis reports weighted Average Precision (wAP), following the H-CAST evaluation protocol. Although named weighted Average Precision following H-CAST, this metric is computed as a class-count-weighted average of level-wise Top-1 accuracies. Let \(L\) be the number of hierarchy levels. For each level \(l\), let \(N_l\) denote the number of classes at that level and let \(P_l\) denote the Top-1 accuracy at that level. The weighted Average Precision is defined as
+\begin{equation}
+    wAP =
+    \sum_{l=1}^{L}
+    \frac{N_l}{\sum_{k=1}^{L} N_k}
+    P_l.
+\end{equation}
+
+
+This metric weights each level according to the number of classes at that level. For CUB-200-2011, the hierarchy contains 13 orders, 38 families, and 200 species. Therefore, wAP is more strongly influenced by species accuracy than by order or family accuracy. This makes wAP useful as a complementary metric for evaluating hierarchical classification, especially when the finest level contains many more classes than the coarser levels.
+
+However, wAP does not directly measure whether the predicted labels form a valid taxonomy path. Therefore, it should be interpreted together with FPA and TICE. In this thesis, FPA remains the main hierarchical correctness metric, while wAP provides an additional weighted summary of level-wise accuracy.
+
+\subsection{Full-Path Accuracy}
+
+Full-Path Accuracy (FPA) measures whether the model predicts the entire taxonomy path correctly. A prediction is counted as correct only when the species, family, and order labels are all correct.
+
+Formally, FPA is defined as
+\begin{equation}
+    FPA =
+    \frac{1}{N}
+    \sum_{i=1}^{N}
+    \mathbb{I}
+    \left[
+        \hat{y}_i^{s}=y_i^{s}
+        \land
+        \hat{y}_i^{f}=y_i^{f}
+        \land
+        \hat{y}_i^{o}=y_i^{o}
+    \right].
+\end{equation}
+
+FPA is stricter than level-wise accuracy because a sample is counted as correct only if all levels are correct simultaneously. This metric is important for hierarchical classification because it evaluates whether the model can produce a fully correct taxonomic prediction. Since family and order accuracies are usually high on CUB, changes in FPA are often strongly influenced by changes in species accuracy.
+
+\subsection{Tree-based InConsistency Error}
+
+Tree-based InConsistency Error (TICE) measures whether the predicted labels form a valid path in the hierarchy. Unlike FPA, TICE does not require the prediction to match the ground truth. Instead, it checks whether the predicted species, family, and order are mutually consistent according to the taxonomy.
+
+Let \(\pi_f(\cdot)\) denote the parent-family mapping from species to family, and let \(\pi_o(\cdot)\) denote the parent-order mapping from family to order. A predicted path is consistent if
+\begin{equation}
+    \hat{y}_i^{f}
+    =
+    \pi_f(\hat{y}_i^{s})
+    \quad \text{and} \quad
+    \hat{y}_i^{o}
+    =
+    \pi_o(\hat{y}_i^{f}).
+\end{equation}
+
+The inconsistency indicator for sample \(i\) is defined as
+\begin{equation}
+    e_i =
+    \mathbb{I}
+    \left[
+        \hat{y}_i^{f}
+        \neq
+        \pi_f(\hat{y}_i^{s})
+        \;\lor\;
+        \hat{y}_i^{o}
+        \neq
+        \pi_o(\hat{y}_i^{f})
+    \right].
+\end{equation}
+
+TICE is then computed as
+\begin{equation}
+    TICE =
+    \frac{1}{N}
+    \sum_{i=1}^{N}
+    e_i.
+\end{equation}
+
+A lower TICE indicates better taxonomy consistency. A model can have high level-wise accuracy but still produce inconsistent paths if its species, family, and order heads make predictions that do not correspond to the same taxonomy branch. Therefore, TICE complements accuracy-based metrics by measuring the structural validity of the prediction path.
+
+In the proposed model, TICE is especially useful because the attribute-guided fusion is applied mainly to the species branch. If the species prediction changes without a corresponding change in the family or order predictions, taxonomy inconsistency may increase. Thus, TICE helps analyze the trade-off between improving fine-grained species discrimination and preserving hierarchical consistency.
+
+\subsection{Attribute Prediction Accuracy}
+
+Attribute prediction accuracy evaluates the auxiliary attribute prediction heads. It is reported only for attribute-guided models. Since the model uses group-specific classifiers, attribute accuracy is computed over active attribute groups rather than over a single 312-dimensional binary vector.
+
+For each active group \(g\), the model predicts one retained attribute state. Let \(\hat{t}_{i,g}\) be the predicted attribute state for sample \(i\) and group \(g\), and let \(\tilde{t}_{i,g}\) be the remapped ground-truth attribute target. If the target state is not retained in the selected attribute mask, the sample-group pair is ignored.
+
+For each mini-batch, attribute accuracy is first computed separately for each active group with at least one valid target. Let \(\Omega_g\) denote the set of valid samples for group \(g\) in the mini-batch. The group accuracy is
+\begin{equation}
+    Acc_{attr}^{g}
+    =
+    \frac{1}{|\Omega_g|}
+    \sum_{i \in \Omega_g}
+    \mathbb{I}
+    \left[
+        \hat{t}_{i,g}
+        =
+        \tilde{t}_{i,g}
+    \right].
+\end{equation}
+
+The batch attribute accuracy is then computed as the average over valid groups:
+\begin{equation}
+    Acc_{attr}^{batch}
+    =
+    \frac{1}{|\mathcal{G}_{valid}|}
+    \sum_{g \in \mathcal{G}_{valid}}
+    Acc_{attr}^{g}.
+\end{equation}
+
+The reported attribute accuracy is the average of this batch-level attribute accuracy over the test set, weighted by batch size in the evaluation logger.
+
+This metric measures how well the auxiliary attribute heads learn the selected attribute targets. However, attribute prediction accuracy should not be interpreted as the final task performance. A higher attribute accuracy does not always guarantee higher species accuracy, because some attributes may be easy to predict but not highly discriminative for fine-grained species classification. Therefore, attribute accuracy is used as a diagnostic metric to analyze the behavior of the attribute branch, while species accuracy, FPA, wAP, and TICE remain the primary metrics for evaluating hierarchical classification.
+
+
+
+
+
+
+\section{Main Results}
+
+This section presents the main comparison between the proposed attribute-guided H-CAST model and image-only baselines under the official CUB-200-2011 train/test protocol. The goal is to answer RQ1: whether attribute-guided learning improves hierarchical bird classification compared with the image-only H-CAST baseline. Unless otherwise stated, the proposed attribute-guided H-CAST refers to the HSDAS-199 setting with \(\lambda_{attr}=0.5\) and \(\lambda_{div}=0.5\).
+
+Table~\ref{tab:main_results} reports Full-Path Accuracy (FPA), level-wise accuracies, Weighted Average Precision (wAP), Tree-based InConsistency Error (TICE), and attribute prediction accuracy when applicable. The image-only baselines do not use attribute annotations and therefore do not report attribute accuracy.
+
+\begin{table}[t]
+    \centering
+    \caption{Main comparison under the official CUB-200-2011 train/test protocol. Attribute accuracy is reported only for attribute-guided models.}
+    \label{tab:main_results}
+    \small
+    \setlength{\tabcolsep}{4pt}
+    \renewcommand{\arraystretch}{1.12}
+    \begin{tabularx}{\textwidth}{@{}Xccccccc@{}}
+        \hline
+        \textbf{Method} & \textbf{FPA} & \textbf{Species} & \textbf{Family} & \textbf{Order} & \textbf{wAP} & \textbf{TICE} & \textbf{Attr} \\
+        \hline
+        H-CAST authors 
+        & 83.28 & 84.86 & 95.12 & 98.65 & 87.13 & 4.12 & -- \\
+        H-CAST rerun 
+        & 82.86 & 84.55 & 95.22 & 98.74 & 86.90 & 4.35 & -- \\
+        \makecell[l]{Proposed attribute-guided\\H-CAST} 
+        & \textbf{84.36} & \textbf{85.83} & \textbf{95.62} & \textbf{99.03} & \textbf{88.00} & \textbf{3.62} & 87.04 \\
+        \hline
+    \end{tabularx}
+\end{table}
+
+The proposed attribute-guided H-CAST improves all accuracy-based metrics compared with the H-CAST rerun. Specifically, it improves FPA from 82.86\% to 84.36\%, species accuracy from 84.55\% to 85.83\%, family accuracy from 95.22\% to 95.62\%, order accuracy from 98.74\% to 99.03\%, and wAP from 86.90\% to 88.00\%. It also reduces TICE from 4.35\% to 3.62\%. This result suggests that adding attribute-guided auxiliary supervision and species-level attribute fusion provides useful information beyond the image-only H-CAST baseline.
+
+The largest improvement appears at the species level, which is consistent with the design of the proposed architecture. Attribute-guided fusion is applied to the species-level branch, where fine-grained cues are most important. Since wAP is weighted by the number of classes at each hierarchy level, the improvement in species accuracy also contributes strongly to the improvement in wAP.
+
+Compared with the result reported by the original H-CAST authors, the proposed model also achieves higher FPA, species accuracy, family accuracy, order accuracy, and wAP, while obtaining a lower TICE. However, the comparison with the H-CAST rerun should be considered the primary comparison, because it is produced under the same implementation environment and training setup as the proposed model.
+
+Overall, the main result supports the effectiveness of attribute-guided learning for hierarchical bird classification. Nevertheless, later ablation studies show that the improvement depends on the attribute subset and the loss configuration. Therefore, the proposed method should be interpreted as improving fine-grained species discrimination, while the relationship between species accuracy and taxonomy consistency still requires careful analysis.
+
+
+\input{chapters/c4/c4_1_ablation_studies}
+
+\input{chapters/c4/c4_2_qualitative}
+
+

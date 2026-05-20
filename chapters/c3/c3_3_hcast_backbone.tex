@@ -1,0 +1,100 @@
+\section{H-CAST Backbone}
+
+The proposed model in this thesis is built on top of H-CAST, a visually consistent hierarchical image classification framework. H-CAST itself is a supervised hierarchical extension of CAST, which is a Vision Transformer-based architecture that integrates hierarchical image segmentation into the recognition process. This section describes the H-CAST backbone used in this thesis before introducing the proposed attribute-guided extension in the following sections.
+
+\subsection{From ViT to CAST}
+
+The standard Vision Transformer represents an image as a sequence of fixed square patch tokens \cite{dosovitskiy2020image}. Although this representation is effective for image classification, patch tokens are not necessarily aligned with object boundaries or semantic parts. This limitation is important for fine-grained bird classification, where the discriminative evidence may lie in localized and irregularly shaped regions such as the bill, wing, head, breast, or tail.
+
+CAST addresses this issue by replacing fixed patch tokens with adaptive segment tokens \cite{ke2024learning}. Instead of dividing the image into a regular grid, CAST first extracts superpixels from the input image using SEEDS \cite{van2015seeds, ke2024learning}. These superpixels are designed to follow low-level color and boundary structure more closely than fixed square patches. In the CAST framework, segmentation is not treated as a separate task requiring pixel-level labels. Rather, hierarchical segmentation is integrated into the recognition process and learned from image-level recognition objectives \cite{ke2024learning}.
+
+Let \(S_0\) denote the initial superpixel partition of the input image. Each superpixel corresponds to an adaptive segment token. CAST first obtains pixel-level features using convolutional layers, then averages the pixel features inside each superpixel to form the initial segment feature. Positional information is also aggregated within each superpixel. The resulting segment tokens are appended with a class token, forming the initial token representation:
+\begin{equation}
+    Z_0 = [X_{class}; X_s + E_{pos}],
+\end{equation}
+where \(X_s\) denotes the visual features of the superpixels, \(E_{pos}\) denotes the corresponding positional encodings, and \(X_{class}\) is the class token.
+
+The key operation in CAST is graph pooling. Given segment features at a finer level, graph pooling softly assigns fine segment tokens to a smaller set of coarser segment tokens. This operation progressively constructs a fine-to-coarse visual parsing hierarchy. Let \(P_l\) denote the soft assignment matrix from level \(l-1\) to level \(l\). The segmentation at the coarser level is obtained by propagating the previous segmentation through the assignment matrix:
+\begin{equation}
+    S_l = S_{l-1} P_l.
+\end{equation}
+In this way, CAST produces a hierarchy of segmentations and features. Finer levels preserve local details, while coarser levels aggregate larger regions and capture more global visual context.
+
+Compared with a standard ViT, CAST differs in two important aspects. First, its visual tokens correspond to superpixel-based image segments rather than square patches. Second, the number of tokens decreases through graph pooling, allowing the model to form a part-to-whole visual hierarchy. This hierarchy is learned as an internal process for recognition, without requiring external segmentation annotations.
+
+\subsection{H-CAST for Hierarchical Classification}
+
+H-CAST extends CAST from flat image recognition to hierarchical image classification \cite{park2025visually}. In a hierarchical task, an input image is associated with labels at multiple taxonomy levels. Let \(x\) denote an image and let
+\begin{equation}
+    (y_1, y_2, \ldots, y_L)
+\end{equation}
+denote its hierarchical labels, where \(y_1\) is the coarsest label and \(y_L\) is the finest label. For CUB-200-2011, the hierarchy contains three levels: order, family, and species. Therefore, the model must predict not only the species label, but also the corresponding family and order labels.
+
+The main motivation of H-CAST is that different taxonomy levels require different levels of visual detail. Fine-grained species recognition may require local details such as bill shape, wing markings, or head coloration. Coarser recognition, such as family or order classification, may rely on broader visual structures. However, these levels should still be visually consistent: coarse-level predictions should be grounded in regions that are related to the fine-level evidence, rather than attending to unrelated background or objects.
+
+To support this behavior, H-CAST attaches classification heads to different levels of the CAST visual hierarchy. Let \(Z_l\) and \(S_l\) denote the feature representation and segmentation at level \(l\). The feature representation \(Z_l\) contains a class token \(Z_l^{class}\) and segment tokens \(Z_l^{seg}\). For each taxonomy level \(l\), H-CAST uses a classification head \(f_l\), implemented as a linear classifier, on the corresponding class token:
+\begin{equation}
+    \hat{\mathbf{z}}_l = f_l(Z_l^{class}).
+\end{equation}
+Here, \(\hat{\mathbf{z}}_l\) denotes the logits for the label space at level \(l\).
+
+H-CAST applies hierarchical supervision across all taxonomy levels. The hierarchical visual consistency loss is defined as the sum of cross-entropy losses over all levels:
+\begin{equation}
+    \mathcal{L}_{HV}
+    =
+    \sum_{l=1}^{L}
+    \mathcal{L}_{CE}
+    \left(
+        f_l(Z_l^{class}), y_l
+    \right).
+\end{equation}
+This differs from the original CAST setting, where supervision is applied only to the final class token for a flat recognition objective. By applying classification losses at multiple stages, H-CAST aligns different levels of the visual parsing hierarchy with different levels of the semantic taxonomy.
+
+In the CUB setting used in this thesis, the finest prediction corresponds to species, while the coarser predictions correspond to family and order. The H-CAST backbone therefore provides three hierarchical classification outputs:
+\begin{equation}
+    (\hat{\mathbf{z}}^{s}, \hat{\mathbf{z}}^{f}, \hat{\mathbf{z}}^{o}),
+\end{equation}
+where \(\hat{\mathbf{z}}^{s}\), \(\hat{\mathbf{z}}^{f}\), and \(\hat{\mathbf{z}}^{o}\) are the logits for species, family, and order, respectively.
+
+\subsection{Semantic Consistency with Tree-Path KL Divergence}
+
+Although hierarchical supervision encourages each level to make a correct prediction, independently trained classification heads may still produce inconsistent paths. For example, a model may predict a species from one family while predicting a different family at the family level. This violates the known taxonomy.
+
+To reduce such semantic inconsistency, H-CAST introduces Tree-Path KL Divergence loss \cite{park2025visually}. The idea is to encode the ground-truth path across all hierarchy levels into a single target distribution. Let \(1_{y_l}\) be the one-hot vector of the ground-truth label at level \(l\). The concatenated tree-path target is defined as
+\begin{equation}
+    Y =
+    \frac{1}{L}
+    [1_{y_L}; \ldots; 1_{y_1}].
+\end{equation}
+The model outputs from all hierarchy levels are also concatenated and normalized using log-softmax:
+\begin{equation}
+    \hat{Y}
+    =
+    \mathrm{LogSoftmax}
+    \left(
+        [f_L(Z_L^{class}); \ldots; f_1(Z_1^{class})]
+    \right).
+\end{equation}
+The Tree-Path KL loss is then computed as
+\begin{equation}
+    \mathcal{L}_{TK}
+    =
+    \mathcal{L}_{KL}(\hat{Y}, Y).
+\end{equation}
+This loss encourages the model to assign probability mass to a valid root-to-leaf path in the taxonomy. In the original H-CAST objective, the final training loss is
+\begin{equation}
+    \mathcal{L}_{HCAST}
+    =
+    \mathcal{L}_{HV}
+    +
+    \alpha \mathcal{L}_{TK},
+\end{equation}
+where \(\alpha\) controls the weight of the semantic consistency term.
+
+\subsection{Role of H-CAST in the Proposed Model}
+
+In this thesis, H-CAST serves as the image-only hierarchical backbone. Its role is to provide visually consistent hierarchical representations for order, family, and species prediction. The backbone preserves the fine-to-coarse visual grouping mechanism inherited from CAST and the multi-level supervision introduced by H-CAST.
+
+The proposed method does not replace the H-CAST backbone. Instead, it extends the species-level branch with attribute-guided learning. This design is motivated by the observation that the species level is the most fine-grained level and is most likely to benefit from localized attribute cues. Family and order predictions are still produced from the original H-CAST hierarchy, while the species prediction is enhanced by an additional attribute-guided module.
+
+Therefore, the H-CAST backbone provides two essential foundations for this thesis. First, it offers a structured visual hierarchy that aligns fine visual details with fine labels and coarser visual regions with coarser labels. Second, it provides the species-level graph-node features and class token used by the proposed attribute-guided module. The next sections describe how CUB attributes are represented, selected, and fused into this H-CAST-based framework.

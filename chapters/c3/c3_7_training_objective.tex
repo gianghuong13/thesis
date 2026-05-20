@@ -1,0 +1,197 @@
+\section{Training Objective}
+
+The proposed model is trained with a combination of hierarchical visual consistency loss, optional Tree-Path KL divergence loss, auxiliary attribute prediction loss, and attribute attention diversity loss. The overall objective is designed to preserve the original hierarchical classification ability of H-CAST \cite{park2025visually}, while encouraging the species-level representation to encode discriminative attribute-oriented information.
+
+For the three-level CUB hierarchy, the model predicts species, family, and order labels. In addition, it predicts group-wise attribute labels for the active attribute groups selected by the attribute mask. The total training objective is written as
+\begin{equation}
+    \mathcal{L}
+    =
+    \mathcal{L}_{HV}
+    +
+    \alpha \mathcal{L}_{TK}
+    +
+    \lambda_{attr}\mathcal{L}_{attr}
+    +
+    \lambda_{div}\mathcal{L}_{div},
+    \label{eq:total_loss}
+\end{equation}
+where \(\mathcal{L}_{HV}\) is the hierarchical visual consistency loss inherited from H-CAST, \(\mathcal{L}_{TK}\) is the optional Tree-Path KL divergence loss inherited from H-CAST, \(\mathcal{L}_{attr}\) is the auxiliary attribute prediction loss, and \(\mathcal{L}_{div}\) is the attribute attention diversity loss. The weights \(\alpha\), \(\lambda_{attr}\), and \(\lambda_{div}\) control the contribution of each additional loss term.
+
+In the original H-CAST formulation, \(\mathcal{L}_{HV}\) denotes the sum of classification losses across hierarchy levels. In this thesis, it corresponds to the level-wise classification loss over species, family, and order. In the implementation, \(\mathcal{L}_{TK}\) is enabled only when the global KL option is used. If this option is disabled, \(\alpha\) is effectively set to zero. Similarly, setting \(\lambda_{div}=0\) removes the diversity regularization term, and setting \(\lambda_{attr}=0\) removes the attribute prediction supervision.
+
+\subsection{Hierarchical Visual Consistency Loss}
+
+The main task is hierarchical classification over species, family, and order. Let \(\mathbf{z}^{s}\), \(\mathbf{z}^{f}\), and \(\mathbf{z}^{o}\) denote the logits predicted by the model for species, family, and order, respectively. Let \(y^{s}\), \(y^{f}\), and \(y^{o}\) denote the corresponding ground-truth labels.
+
+Following H-CAST, the hierarchical visual consistency loss is defined as the sum of classification losses at the three hierarchy levels:
+\begin{equation}
+    \mathcal{L}_{HV}
+    =
+    \mathcal{L}_{s}
+    +
+    \mathcal{L}_{f}
+    +
+    \mathcal{L}_{o},
+    \label{eq:hv_loss}
+\end{equation}
+where
+\begin{equation}
+    \mathcal{L}_{s}
+    =
+    \mathcal{L}_{CE}(\mathbf{z}^{s}, y^{s}),
+    \qquad
+    \mathcal{L}_{f}
+    =
+    \mathcal{L}_{CE}(\mathbf{z}^{f}, y^{f}),
+    \qquad
+    \mathcal{L}_{o}
+    =
+    \mathcal{L}_{CE}(\mathbf{z}^{o}, y^{o}).
+\end{equation}
+
+In H-CAST, different hierarchy levels are supervised at different stages of the visual hierarchy. Fine-grained species prediction is associated with a more detailed species-level representation, while family and order predictions are produced from later, coarser H-CAST stages. In the proposed model, the species-level representation is further enhanced by attribute-guided fusion, whereas family and order predictions remain produced by the original H-CAST hierarchical stages.
+
+In practice, the base classification criterion may be standard cross-entropy, label-smoothed cross-entropy, or soft-target cross-entropy when Mixup \cite{zhang2017mixup} or CutMix \cite{yun2019cutmix} is used. Regardless of the exact criterion, \(\mathcal{L}_{HV}\) supervises all three taxonomic levels jointly. This follows the H-CAST principle that different hierarchy levels should be trained together within a shared visually grounded hierarchy rather than using separate independent classifiers for each level.
+\subsection{Attribute Prediction Loss}
+
+The attribute branch is supervised through group-specific attribute prediction heads. Let \(\mathcal{G}_{active}\) denote the set of active attribute groups after applying the selected attribute mask. For each active group \(g \in \mathcal{G}_{active}\), the model predicts a logit vector \(\mathbf{z}^{a}_{g}\) over the retained attribute states in that group.
+
+As described in the previous section, the original CUB attribute targets are remapped according to the selected group mask. Let \(\tilde{t}_{i,g}\) be the remapped target for sample \(i\) and group \(g\). If the original ground-truth attribute state is not retained in the selected mask, then \(\tilde{t}_{i,g}\) is assigned an ignore label and excluded from the loss.
+
+Let \(\Omega_g\) denote the set of samples in the mini-batch whose target for group \(g\) is not ignored. The set of valid groups is
+\begin{equation}
+    \mathcal{G}_{valid}
+    =
+    \{g \in \mathcal{G}_{active} \mid |\Omega_g| > 0\}.
+\end{equation}
+The attribute prediction loss is computed as
+\begin{equation}
+    \mathcal{L}_{attr}
+    =
+    \frac{1}{|\mathcal{G}_{valid}|}
+    \sum_{g \in \mathcal{G}_{valid}}
+    \frac{1}{|\Omega_g|}
+    \sum_{i \in \Omega_g}
+    \mathcal{L}_{CE}
+    \left(
+        \mathbf{z}^{a}_{i,g},
+        \tilde{t}_{i,g}
+    \right).
+    \label{eq:attr_loss}
+\end{equation}
+
+This auxiliary loss encourages each attribute-group query to learn a representation related to its semantic group, such as bill shape, wing color, head pattern, or tail shape. The attribute loss is not used to make the final prediction directly. Instead, it shapes the attribute-oriented features that are later fused with the species-level class token. During inference, no ground-truth attribute labels are required.
+
+\subsection{Tree-Path KL Divergence Loss}
+
+H-CAST introduces a semantic consistency objective to reduce invalid prediction paths in the taxonomy \cite{park2025visually}. In this thesis, this term is inherited as an optional global KL loss. It is used only when the corresponding training option is enabled.
+
+Let the logits from the three hierarchy levels be concatenated as
+\begin{equation}
+    \mathbf{z}^{all}
+    =
+    [\mathbf{z}^{o}; \mathbf{z}^{f}; \mathbf{z}^{s}].
+\end{equation}
+The corresponding target vectors are also concatenated:
+\begin{equation}
+    \mathbf{y}^{all}
+    =
+    [\mathbf{y}^{o}; \mathbf{y}^{f}; \mathbf{y}^{s}],
+\end{equation}
+where the target vectors are represented as one-hot vectors, or as soft target vectors when Mixup or CutMix is applied. The concatenated target vector is normalized so that it forms a valid distribution:
+\begin{equation}
+    \bar{\mathbf{y}}^{all}
+    =
+    \frac{\mathbf{y}^{all}}
+    {\|\mathbf{y}^{all}\|_1}.
+\end{equation}
+
+The Tree-Path KL loss is then computed as
+\begin{equation}
+    \mathcal{L}_{TK}
+    =
+    \mathcal{L}_{KL}
+    \left(
+        \log \mathrm{Softmax}(\mathbf{z}^{all}),
+        \bar{\mathbf{y}}^{all}
+    \right).
+    \label{eq:tk_loss}
+\end{equation}
+
+This loss encourages the concatenated predictions across order, family, and species to align with the ground-truth taxonomic path. In the implementation, this term is weighted by \(\alpha\), corresponding to the global KL weight. If the global KL option is not used, this term is omitted from the total loss.
+
+\subsection{Attribute Attention Diversity Loss}
+
+The proposed model uses multiple attribute-group queries to extract attribute-oriented features from species-level graph nodes. Without additional regularization, different attribute groups may attend to similar graph regions, which can make the attribute representations redundant. To reduce this issue, this thesis studies an attribute attention diversity loss.
+
+The diversity loss is inspired by the diversity component of Mutual-Channel Loss, but is adapted to attribute-group attention maps rather than class-specific convolutional channels \cite{Chang_2020}. In the original Mutual-Channel Loss, the diversity component encourages different channels to focus on different discriminative regions. In this thesis, the same high-level idea is applied to attribute-group attention: different semantic attribute groups should be encouraged to attend to complementary graph nodes.
+
+Let
+\begin{equation}
+    A
+    \in
+    \mathbb{R}^{B \times G \times N_s}
+\end{equation}
+denote the cross-attention weights from the attribute-group queries to the species-level graph nodes, where \(B\) is the batch size, \(G\) is the number of active attribute groups, and \(N_s\) is the number of species-level graph nodes. Although the cross-attention module returns attention weights, the implementation applies an additional softmax normalization along the graph-node dimension before computing the diversity score:
+\begin{equation}
+    \tilde{A}_{b,g,n}
+    =
+    \mathrm{Softmax}_{n}(A_{b,g,n}).
+\end{equation}
+
+Instead of computing diversity over all individual attribute groups directly, the implementation first groups active attribute groups into broader macro-parts which are head, wing, tail, and body. Let \(\mathcal{P}\) denote the set of active macro-parts. For each macro-part \(p \in \mathcal{P}\), the attention map is computed by averaging the attention maps of all active attribute groups belonging to that macro-part:
+\begin{equation}
+    M_{b,p,n}
+    =
+    \frac{1}{|\mathcal{G}_{p}|}
+    \sum_{g \in \mathcal{G}_{p}}
+    \tilde{A}_{b,g,n},
+    \label{eq:macro_attn}
+\end{equation}
+where \(\mathcal{G}_{p}\) is the set of active attribute groups assigned to macro-part \(p\).
+
+The diversity score for each sample is defined as
+\begin{equation}
+    h_b
+    =
+    \sum_{n=1}^{N_s}
+    \max_{p \in \mathcal{P}}
+    M_{b,p,n}.
+    \label{eq:h_score}
+\end{equation}
+
+This score becomes larger when different macro-parts cover complementary graph nodes. If all macro-parts attend to the same region, the maximum attention map does not cover many distinct nodes and the score remains lower. Therefore, maximizing \(h_b\) encourages different attribute macro-parts to distribute their attention over different visual evidence.
+
+The diversity loss is defined as the negative mean diversity score:
+\begin{equation}
+    \mathcal{L}_{div}
+    =
+    -
+    \frac{1}{B}
+    \sum_{b=1}^{B}
+    h_b.
+    \label{eq:div_loss}
+\end{equation}
+
+Since the training objective is minimized, adding \(\lambda_{div}\mathcal{L}_{div}\) encourages the model to maximize the diversity score. If fewer than two macro-parts are active, the diversity loss is not meaningful and is set to zero.
+
+This loss does not use any pixel-level attribute localization labels. It only regularizes the internal cross-attention patterns learned by the attribute-group queries. Therefore, it should be understood as a soft diversity regularizer rather than direct supervision for attribute localization.
+
+\subsection{Overall Objective}
+
+Combining the above components, the final training loss is
+\begin{equation}
+    \mathcal{L}
+    =
+    \mathcal{L}_{HV}
+    +
+    \alpha \mathcal{L}_{TK}
+    +
+    \lambda_{attr}\mathcal{L}_{attr}
+    +
+    \lambda_{div}\mathcal{L}_{div}.
+\end{equation}
+
+In the experiments, different settings can be obtained by changing the loss weights. For example, setting \(\lambda_{div}=0\) removes the attention diversity regularization, while setting \(\lambda_{div}=0.5\) enables the diversity term. Similarly, the contribution of attribute supervision is controlled by \(\lambda_{attr}\), and the semantic consistency loss is controlled by \(\alpha\).
+
+This objective combines hierarchical label supervision, semantic consistency regularization, auxiliary attribute supervision, and attention diversity regularization. The hierarchical classification loss trains the model to predict species, family, and order. The Tree-Path KL term encourages semantic consistency across taxonomy levels. The attribute prediction loss encourages the species-level branch to encode semantic bird traits. The diversity loss encourages attribute macro-parts to attend to complementary visual regions. Together, these components aim to improve fine-grained species discrimination while preserving hierarchical classification behavior.
