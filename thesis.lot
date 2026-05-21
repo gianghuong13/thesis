@@ -2,15 +2,15 @@
 \addvspace {10\p@ }
 \addvspace {10\p@ }
 \addvspace {10\p@ }
-\contentsline {table}{\numberline {3.1}{\ignorespaces CUB attribute groups used in this thesis. Each group contains a set of attribute states.}}{40}{table.caption.3}%
+\contentsline {table}{\numberline {3.1}{\ignorespaces CUB attribute groups used in this thesis. Each group contains a set of attribute states.}}{42}{table.caption.3}%
 \addvspace {10\p@ }
-\contentsline {table}{\numberline {4.1}{\ignorespaces Image-only baselines used for comparison. Results are reported under the official CUB train/test protocol.}}{66}{table.caption.4}%
-\contentsline {table}{\numberline {4.2}{\ignorespaces Attribute-guided variants considered in the experiments.}}{67}{table.caption.5}%
-\contentsline {table}{\numberline {4.3}{\ignorespaces Attribute selection variants compared in this thesis. All variants are evaluated under the official CUB train/test protocol.}}{69}{table.caption.6}%
-\contentsline {table}{\numberline {4.4}{\ignorespaces Main comparison under the official CUB-200-2011 train/test protocol. Attribute accuracy is reported only for attribute-guided models.}}{73}{table.caption.7}%
-\contentsline {table}{\numberline {4.5}{\ignorespaces Effect of attribute selection strategy under the official CUB train/test protocol. Random-199 is reported as the mean over three random seeds.}}{74}{table.caption.8}%
-\contentsline {table}{\numberline {4.6}{\ignorespaces Effect of HSDAS attribute subset size. HSDAS-174 uses top-3 attributes per species, while HSDAS-199 uses top-5 attributes per species. All settings use the official CUB train/test protocol.}}{76}{table.caption.9}%
-\contentsline {table}{\numberline {4.7}{\ignorespaces Effect of the attribute attention diversity loss using HSDAS-199.}}{76}{table.caption.10}%
-\contentsline {table}{\numberline {4.8}{\ignorespaces Effect of attribute supervision, species-level fusion, and diversity regularization under the official CUB train/test protocol.}}{78}{table.caption.11}%
-\contentsline {table}{\numberline {4.9}{\ignorespaces Random attribute control. Random-199 uses the same number of attributes as HSDAS-199 and preserves the same number of selected attribute states per group. Mean and standard deviation are computed over three random seeds.}}{79}{table.caption.12}%
-\contentsline {table}{\numberline {4.10}{\ignorespaces Prediction-level case analysis comparing the H-CAST rerun and the proposed attribute-guided model on the CUB test set.}}{82}{table.caption.13}%
+\contentsline {table}{\numberline {4.1}{\ignorespaces Image-only baselines used for comparison. Results are reported under the official CUB train/test protocol.}}{68}{table.caption.4}%
+\contentsline {table}{\numberline {4.2}{\ignorespaces Attribute-guided variants considered in the experiments.}}{69}{table.caption.5}%
+\contentsline {table}{\numberline {4.3}{\ignorespaces Attribute selection variants compared in this thesis. All variants are evaluated under the official CUB train/test protocol.}}{71}{table.caption.6}%
+\contentsline {table}{\numberline {4.4}{\ignorespaces Main comparison under the official CUB-200-2011 train/test protocol. Attribute accuracy is reported only for attribute-guided models.}}{75}{table.caption.7}%
+\contentsline {table}{\numberline {4.5}{\ignorespaces Effect of attribute selection strategy under the official CUB train/test protocol. Random-199 is reported as the mean over three random seeds.}}{76}{table.caption.8}%
+\contentsline {table}{\numberline {4.6}{\ignorespaces Effect of HSDAS attribute subset size. HSDAS-174 uses top-3 attributes per species, while HSDAS-199 uses top-5 attributes per species. All settings use the official CUB train/test protocol.}}{78}{table.caption.9}%
+\contentsline {table}{\numberline {4.7}{\ignorespaces Effect of the attribute attention diversity loss using HSDAS-199.}}{78}{table.caption.10}%
+\contentsline {table}{\numberline {4.8}{\ignorespaces Effect of attribute supervision, species-level fusion, and diversity regularization under the official CUB train/test protocol.}}{80}{table.caption.11}%
+\contentsline {table}{\numberline {4.9}{\ignorespaces Random attribute control. Random-199 uses the same number of attributes as HSDAS-199 and preserves the same number of selected attribute states per group. Mean and standard deviation are computed over three random seeds.}}{81}{table.caption.12}%
+\contentsline {table}{\numberline {4.10}{\ignorespaces Prediction-level case analysis comparing the H-CAST rerun and the proposed attribute-guided model on the CUB test set.}}{84}{table.caption.13}%
