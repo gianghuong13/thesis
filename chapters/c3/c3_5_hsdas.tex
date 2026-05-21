@@ -1,14 +1,14 @@
 \section{Hard-Sibling Discriminative Attribute Selection}
 
-The previous section described how CUB attributes are represented as semantic groups and used as auxiliary supervision in the proposed model. However, CUB-200-2011 contains 312 attributes \cite{wah2011cub}, and not all attributes are equally useful for distinguishing fine-grained bird species. Some attributes may be shared by many species, while others may be redundant or weakly discriminative. Therefore, this thesis studies an attribute selection strategy called \textit{Hard-Sibling Discriminative Attribute Selection} (HSDAS).
+The previous section described how CUB attributes are represented as semantic groups and used as auxiliary supervision. However, CUB-200-2011 contains 312 attributes \cite{wah2011cub}, and not all attributes are equally useful for distinguishing fine-grained bird species. Some attributes may be shared by many species, redundant with other attributes, or weakly related to the most difficult species-level confusions. Therefore, this thesis studies an attribute selection strategy called \textit{Hard-Sibling Discriminative Attribute Selection} (HSDAS).
 
-Although the original selection implementation can compute attribute scores at the species, family, and order levels, the proposed model in this thesis uses the species-level selected attributes for attribute-guided fusion. This choice is consistent with the architecture described in this chapter, where the attribute-guided module is attached to the species-level branch of H-CAST \cite{park2025visually}. Therefore, this section focuses only on species-level HSDAS.
+The purpose of HSDAS is to construct a compact attribute supervision mask for fine-grained species recognition. Although the original scoring implementation can be applied at different taxonomy levels, the proposed model uses the species-level selected attributes because the attribute-guided fusion module is attached to the species branch. This is consistent with the motivation that visual attributes are expected to be most useful for distinguishing visually similar species within the same family.
 
 \subsection{Motivation}
 
-Fine-grained bird classification is challenging because visually similar species often belong to the same family. Such species may share global appearance, body shape, and dominant colors, but differ in localized visual traits such as bill shape, crown color, wing pattern, breast markings, or tail shape. A globally discriminative attribute may separate unrelated bird species, but may not help distinguish species that are taxonomically close. Therefore, the proposed selection strategy focuses on attributes that distinguish a species from its sibling species within the same family.
+Fine-grained bird classification is challenging because visually similar species often belong to the same family. Such species may share global appearance, body shape, and dominant colors, but differ in subtle visual traits such as bill shape, crown color, wing pattern, breast markings, or tail shape. A globally discriminative attribute may separate unrelated bird species, but may not help distinguish species that are taxonomically close. Therefore, HSDAS focuses on attributes that distinguish a species from its sibling species within the same family.
 
-The key idea of HSDAS is to select attributes according to local taxonomic discrimination. For each species, the method compares its class-level attribute vector with the attribute vectors of sibling species. In addition, it gives special attention to hard siblings, which are sibling species that have similar attribute profiles. These hard siblings are likely to be difficult to distinguish, so attributes that separate them are expected to be useful for species-level recognition.
+The key idea is local taxonomic discrimination. For each species, HSDAS compares its class-level attribute vector with the attribute vectors of its sibling species. It also gives special attention to hard siblings, which are sibling species with similar attribute profiles. These hard siblings are likely to be difficult to separate, so attributes that distinguish them are expected to be useful for species-level recognition.
 
 \subsection{Species-Level Attribute Representation}
 
@@ -37,7 +37,7 @@ For a target species \(c\), its sibling species are defined as other species tha
     \pi_f(c') = \pi_f(c),\; c' \neq c \}.
 \end{equation}
 
-If a species has no sibling species, its attribute scores are set to zero and no attributes are selected from that species. In CUB, most species belong to families with multiple species, so sibling comparison is usually available.
+If a species has no sibling species, no attributes are selected from that species. In CUB-200-2011, most families contain multiple species, so sibling comparison is usually available.
 
 \subsection{General Sibling Discriminativeness}
 
@@ -52,7 +52,7 @@ The first component of HSDAS measures how much stronger an attribute is for the 
 
 The general sibling discriminativeness score is then defined as
 \begin{equation}
-    d_{\text{all}}(c,j)
+    d_{\mathrm{all}}(c,j)
     =
     \max
     \left(
@@ -61,7 +61,7 @@ The general sibling discriminativeness score is then defined as
     \right).
 \end{equation}
 
-This score keeps only positive differences. If an attribute is not stronger for the target species than for its siblings on average, it is not considered discriminative for that species. This design makes the selected attributes species-specific: an attribute is useful only when it helps distinguish the target species from its local taxonomic neighborhood. Additionally, this formulation focuses on positive presence cues so attributes that are mainly discriminative through absence are not selected by this scoring rule.
+This score keeps only positive differences. If an attribute is not stronger for the target species than for its siblings on average, it is not considered a positive discriminative cue for that species. This design makes the selected attributes species-specific and sibling-aware. It also means that attributes mainly discriminative through absence are not selected by this scoring rule.
 
 \subsection{Hard-Sibling Discriminativeness}
 
@@ -82,7 +82,7 @@ For each species \(c\), the hard sibling set \(\mathcal{H}_r(c)\) contains the t
     \subseteq
     \mathcal{S}(c).
 \end{equation}
-In the experiments of this thesis, the species-level setting uses \(r=3\).
+In the main species-level setting of this thesis, \(r=3\).
 
 For each hard sibling \(h \in \mathcal{H}_r(c)\), the positive attribute difference is computed as
 \begin{equation}
@@ -93,7 +93,7 @@ For each hard sibling \(h \in \mathcal{H}_r(c)\), the positive attribute differe
 
 The hard-sibling discriminativeness score is a similarity-weighted sum of these positive differences:
 \begin{equation}
-    d_{\text{hard}}(c,j)
+    d_{\mathrm{hard}}(c,j)
     =
     \sum_{h \in \mathcal{H}_r(c)}
     w_{c,h}
@@ -111,7 +111,7 @@ where the weight \(w_{c,h}\) is the normalized cosine similarity:
     }.
 \end{equation}
 
-This weighting gives more influence to sibling species that are more similar to the target species. As a result, the method emphasizes attributes that separate a species from its most confusing relatives.
+This weighting gives more influence to sibling species that are more similar to the target species. As a result, HSDAS emphasizes attributes that separate a species from its most similar relatives.
 
 \subsection{Final Attribute Score}
 
@@ -119,22 +119,18 @@ The final HSDAS score combines the general sibling discriminativeness and the ha
 \begin{equation}
     s(c,j)
     =
-    d_{\text{all}}(c,j)
+    d_{\mathrm{all}}(c,j)
     +
-    d_{\text{hard}}(c,j).
+    d_{\mathrm{hard}}(c,j).
 \end{equation}
 
-The first term captures attributes that distinguish the target species from all sibling species on average. The second term captures attributes that distinguish the target species from the most similar sibling species. Combining both terms allows the method to balance general local discrimination and hard-case discrimination.
+The first term captures attributes that distinguish the target species from all sibling species on average. The second term captures attributes that distinguish the target species from the most similar sibling species. Combining both terms allows HSDAS to balance general local discrimination and hard-case discrimination.
 
-For each species, attributes with zero final score are removed from consideration. The remaining attributes are sorted in descending order by three criteria:
-\begin{equation}
-    s(c,j), \quad d_{\text{hard}}(c,j), \quad d_{\text{all}}(c,j).
-\end{equation}
-The final score is the primary ranking criterion. The hard-sibling score is used as the first tie-breaker, giving priority to attributes that help with difficult sibling distinctions. The general sibling score is used as the second tie-breaker.
+For each species, attributes with zero final score are removed from consideration. The remaining attributes are sorted in descending order by the final score. When scores are tied, \(d_{\mathrm{hard}}(c,j)\) is used as the first tie-breaker and \(d_{\mathrm{all}}(c,j)\) as the second tie-breaker. This gives priority to attributes that are useful for difficult sibling distinctions.
 
 \subsection{Top-\(k\) Selection and Attribute Union}
 
-After scoring all attributes for each species, HSDAS selects the top \(k\) attributes for each species. In this thesis, the species-level setting uses \(k=5\). Let \(\mathcal{T}_k(c)\) denote the top-\(k\) selected attributes for species \(c\):
+After scoring all attributes for each species, HSDAS selects the top \(k\) positive-score attributes for each species. Let \(\mathcal{T}_k(c)\) denote the selected attributes for species \(c\):
 \begin{equation}
    \mathcal{T}_k(c)
     =
@@ -144,7 +140,7 @@ After scoring all attributes for each species, HSDAS selects the top \(k\) attri
     \right).
 \end{equation}
 
-The final selected attribute set is obtained by taking the union of the selected attributes over all species:
+The final selected attribute set is obtained by taking the union over all species:
 \begin{equation}
     \mathcal{M}
     =
@@ -152,9 +148,9 @@ The final selected attribute set is obtained by taking the union of the selected
     \mathcal{T}_k(c).
 \end{equation}
 
-This union operation produces a compact global attribute subset for the dataset. Although attributes are selected based on species-level sibling discrimination, the final mask is shared by the attribute-guided model. In the main setting of this thesis, this process produces the HSDAS-199 attribute subset.
+This union operation produces a compact global attribute subset for the dataset. Although attributes are selected through species-level sibling comparisons, the final mask is shared by the attribute-guided model. In the main setting of this thesis, species-level HSDAS with \(k=5\) produces the HSDAS-199 subset. A more compact HSDAS variant is also evaluated in the experiments.
 
-The selected attributes are then converted into a group mask according to the 28 CUB attribute groups. For each group \(g\), the mask contains only the selected attribute indices that belong to that group:
+The selected attributes are converted into a group mask according to the 28 CUB attribute groups. For each group \(g\), the mask contains only the selected attribute indices that belong to that group:
 \begin{equation}
     M_g
     =
@@ -220,8 +216,10 @@ Algorithm~\ref{alg:hsdas_species} summarizes the species-level HSDAS procedure u
 
 \subsection{Use in the Proposed Model}
 
-The selected HSDAS attribute set is used to build the attribute mask for the proposed attribute-guided H-CAST model. This mask determines which attribute states are retained in each attribute group and therefore controls the output dimensions of the group-specific attribute classifiers.
+The selected HSDAS attribute set is used to build the attribute mask for the proposed attribute-guided model. This mask determines which attribute states are retained in each attribute group and therefore controls the output dimensions of the group-specific attribute classifiers.
 
-Importantly, HSDAS is used only to construct the training supervision mask. It does not introduce additional inputs during inference. At test time, the model still receives only an image. The selected attributes influence the model indirectly by supervising the attribute-guided module during training and by shaping the attribute-oriented features used for species-level fusion.
+HSDAS is used only to construct the training supervision mask. It does not introduce additional inputs during inference. At test time, the model still receives only an image. The selected attributes influence the model indirectly by supervising the attribute-guided module during training and by shaping the attribute-oriented features used for species-level fusion.
 
-This design has two advantages. First, it reduces the attribute space from the full 312 attributes to a compact subset focused on species-level discrimination. Second, it aligns attribute selection with the fine-grained nature of the task by prioritizing attributes that distinguish sibling and hard-sibling species. Therefore, HSDAS provides a taxonomy-aware attribute subset that is more directly connected to the objective of species-level bird classification than a purely global attribute selection criterion.
+This design has two advantages. First, it reduces the attribute space from the full 312 attributes to a compact subset focused on species-level discrimination. Second, it aligns attribute selection with the fine-grained nature of the task by prioritizing attributes that distinguish sibling and hard-sibling species. Therefore, HSDAS provides a taxonomy-aware attribute subset that is more directly connected to species-level bird classification than a purely global attribute selection criterion.
+
+HSDAS should not be interpreted as a claim that the selected subset must outperform all alternatives on every metric. Instead, it provides a targeted and interpretable supervision mask whose effectiveness is evaluated empirically against FullAttr-312, Sibling-IVAS, and equally sized random subsets in Chapter~4.

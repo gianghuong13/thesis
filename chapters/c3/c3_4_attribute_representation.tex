@@ -1,14 +1,28 @@
 \section{Attribute Representation in CUB-200-2011}
 
-CUB-200-2011 provides rich visual attribute annotations in addition to species labels. The dataset contains 312 bird attributes that describe visual properties such as color, shape, size, and pattern \cite{wah2011cub}. These attributes are especially useful for fine-grained bird recognition because many bird species differ only in subtle local traits, such as bill shape, crown color, wing pattern, belly color, or tail shape.
+CUB-200-2011 provides rich visual attribute annotations in addition to species labels. The dataset contains 312 bird attributes that describe visual properties such as color, shape, size, and pattern \cite{wah2011cub}. These attributes are useful for fine-grained bird recognition because many bird species differ only in subtle semantic traits, such as bill shape, crown color, wing pattern, belly color, or tail shape.
 
-In this thesis, the CUB attributes are used as auxiliary supervision rather than as additional inputs during inference. Given an image, the model still predicts the taxonomic labels directly from the image. Attribute annotations are used only during training to guide the model toward discriminative bird traits.
+In this thesis, CUB attributes are used as auxiliary semantic supervision during training. They are not used as additional manual inputs during inference. Given an image, the model still predicts the taxonomic labels directly from image-derived features. The role of attributes is to guide the learned representation toward visual traits that may be useful for fine-grained species discrimination.
+
+\subsection{Class-Level Attribute Targets}
+
+This thesis uses the class-level continuous attribute annotations provided by CUB-200-2011. Let the full attribute vector for species \(c\) be denoted as
+\begin{equation}
+    \mathbf{a}_c \in \mathbb{R}^{312}.
+\end{equation}
+Each entry indicates the class-level strength of an attribute for that species. In the implementation, the continuous values are normalized to the range \([0,1]\).
+
+For an image \(x_i\) with species label \(y_i^s\), the corresponding attribute target is obtained from the class-level attribute vector:
+\begin{equation}
+    \mathbf{a}_i = \mathbf{a}_{y_i^s}.
+\end{equation}
+Therefore, all images from the same species share the same attribute target. This setting is appropriate for injecting species-level semantic priors, but it does not model image-specific attribute visibility. For example, an attribute may be characteristic of a species even if it is partially occluded or not clearly visible in a particular image. Thus, the attribute task should be interpreted as auxiliary semantic supervision rather than image-level attribute localization.
 
 \subsection{Attribute Groups}
 
-In this thesis, the 312 CUB attributes are organized into 28 semantic groups based on their attribute names. Each group corresponds to a bird trait type, and attributes within the same group represent related states of the same visual property. For example, the group \textit{bill shape} contains different bill-shape states, while the group \textit{wing color} contains possible color states for the wing region. This group structure is important because attributes within the same group are mutually related and describe the same semantic property.
+The 312 CUB attributes are organized into 28 semantic groups based on their attribute names. Each group corresponds to a bird trait type, and attributes within the same group represent possible states of the same visual property. For example, the group \textit{bill shape} contains different bill-shape states, while the group \textit{wing color} contains possible color states for the wing region.
 
-The attribute groups used in this thesis are shown in Table~\ref{tab:cub_attribute_groups}. The number of attribute states differs across groups. Color-related groups usually contain 15 states, while pattern-related groups usually contain fewer states.
+The attribute groups used in this thesis are shown in Table~\ref{tab:cub_attribute_groups}. The number of states differs across groups. Color-related groups usually contain more states, while pattern-related groups contain fewer states.
 
 \begin{table}[t]
     \centering
@@ -40,33 +54,19 @@ Let the set of all attribute groups be denoted as
 \begin{equation}
     \mathcal{G} = \{g_1, g_2, \ldots, g_K\},
 \end{equation}
-where \(K=28\) for the full CUB attribute set. Each group \(g\) contains a set of attribute indices \(I_g\). The full 312-dimensional attribute vector for a species \(c\) is denoted as
-\begin{equation}
-    \mathbf{a}_c \in \mathbb{R}^{312}.
-\end{equation}
+where \(K=28\) for the full CUB attribute set. Each group \(g\) contains a set of original CUB attribute indices \(I_g\). The union of all groups covers the full 312-dimensional attribute space.
 
-The class-level attribute vector is taken from the CUB class-level continuous attribute annotation file, where each entry indicates how frequently the attribute is considered present for a species.
+\subsection{Group-Wise Attribute Prediction}
 
-For an image \(x_i\) with species label \(y_i^s\), the corresponding attribute target is obtained from the class-level attribute annotation of that species:
-\begin{equation}
-    \mathbf{a}_i = \mathbf{a}_{y_i^s}.
-\end{equation}
+A direct approach would be to predict the full 312-dimensional attribute vector. This thesis instead formulates attribute prediction as a group-wise classification problem. This design follows the semantic organization of CUB attributes, where attributes within the same group represent different states of the same trait type.
 
-
-
-\subsection{Group-wise Attribute Prediction}
-
-A straightforward design would be to predict the full 312-dimensional attribute vector directly. However, this thesis does not use that formulation. Instead, the model treats attribute prediction as a group-wise classification problem. This design follows the semantic organization of CUB attributes: attributes within the same group represent related states of the same visual property.
-
-Although the original CUB annotations are provided as attribute-level presence labels, this thesis converts each group into a single-label classification target by selecting the highest-valued attribute state within the group.
-
-For each attribute group \(g\), the model predicts one attribute state from the states belonging to that group. The target for group \(g\) is obtained by selecting the attribute state with the highest value inside the group:
+For each attribute group \(g\), the target attribute category is determined by selecting the highest-valued attribute state within that group:
 \begin{equation}
     t_{i,g}
     =
     \arg\max_{j \in I_g} a_{i,j}.
 \end{equation}
-Here, \(t_{i,g}\) is the group-wise attribute target for sample \(i\) and group \(g\).
+Here, \(t_{i,g}\) is the original CUB attribute index selected as the group-wise target for sample \(i\) and group \(g\).
 
 The model uses a separate classifier for each active attribute group. Let \(\mathbf{h}_{i,g}^{a}\) denote the attribute-oriented feature for group \(g\). The group-specific classifier produces logits
 \begin{equation}
@@ -76,20 +76,20 @@ The model uses a separate classifier for each active attribute group. Let \(\mat
 \end{equation}
 where \(W_g\) and \(b_g\) are the parameters of the classifier for group \(g\). The dimension of \(\mathbf{z}_{i,g}^{a}\) is equal to the number of retained attribute states in that group.
 
-This means that the model does not predict all CUB attributes using a single shared binary classifier. Instead, it predicts attribute states through multiple group-specific classifiers. This formulation is more consistent with the structure of CUB attributes because each classifier specializes in one semantic trait type, such as bill shape, wing color, or tail pattern.
+This formulation means that the model does not predict all CUB attributes using one shared binary classifier. Instead, it predicts one attribute state for each semantic group. This is more consistent with the structure of CUB attributes because each classifier specializes in one trait type, such as bill shape, wing color, breast pattern, or tail shape.
 
 \subsection{Attribute Masks and Active Groups}
 
-When all 312 attributes are used, each group classifier predicts among all states in its corresponding group. However, this thesis also studies selected attribute subsets, such as HSDAS-199, Sibling-IVAS-188, and Random-199. In these settings, only a subset of attributes is retained.
+When all 312 attributes are used, each group classifier predicts among all states in its corresponding group. However, this thesis also studies selected attribute subsets, such as HSDAS-199, HSDAS-174, Sibling-IVAS-188, and Random-199. In these settings, only a subset of attributes is retained.
 
-Let \(M_g \subseteq I_g\) denote the selected attribute indices for group \(g\). If \(M_g\) is non-empty, then \(g\) is considered an active attribute group. The active group set is defined as
+Let \(M_g \subseteq I_g\) denote the selected attribute indices for group \(g\). If \(M_g\) is non-empty, then \(g\) is considered an active attribute group:
 \begin{equation}
     \mathcal{G}_{active}
     =
     \{g \in \mathcal{G} \mid |M_g| > 0\}.
 \end{equation}
 
-For each active group, the original attribute indices are remapped to local class indices. If the target attribute state of a sample is retained in the selected mask, it is used as the target for the group-specific attribute loss. If the target attribute state is not retained, the attribute target for that sample and group is ignored during loss computation. This avoids forcing the model to predict an attribute state that is not included in the selected subset.
+For each active group, the original CUB attribute indices are remapped to local class indices. If the target attribute state of a sample is retained in the selected mask, it is used as the target for the group-specific attribute loss. If the target attribute state is not retained, the sample is ignored for that group during loss computation. This avoids forcing the model to predict an attribute state that is not included in the selected subset.
 
 Formally, for a selected group \(g\), the remapped target is
 \begin{equation}
@@ -97,12 +97,12 @@ Formally, for a selected group \(g\), the remapped target is
     =
     \phi_g(t_{i,g}),
 \end{equation}
-where \(\phi_g(\cdot)\) maps the original CUB attribute index to the local index inside \(M_g\). If \(t_{i,g} \notin M_g\), then \(\tilde{t}_{i,g}\) is set to an ignore label and excluded from the attribute loss.
+where \(\phi_g(\cdot)\) maps the original CUB attribute index to the local index inside \(M_g\). If \(t_{i,g} \notin M_g\), then \(\tilde{t}_{i,g}\) is assigned an ignore label and excluded from the attribute loss.
 
 \subsection{Role in the Proposed Model}
 
-The group-wise attribute representation serves two roles in the proposed method. First, it provides auxiliary supervision through group-specific attribute prediction heads. These heads encourage the model to learn features related to semantic bird traits. Second, the hidden attribute-oriented features are used for species-level fusion. Instead of using the predicted discrete attribute labels as inputs, the model uses continuous attribute-oriented representations learned before the group classifiers.
+The group-wise attribute representation serves two roles in the proposed method. First, it provides auxiliary supervision through group-specific attribute prediction heads. These heads encourage the model to learn representations related to semantic bird traits. Second, the hidden attribute-oriented features are used for species-level fusion. Instead of using predicted discrete attribute labels as inputs, the model uses continuous attribute-oriented representations learned before the group classifiers.
 
-This distinction is important. The proposed model does not classify a bird by first predicting a complete attribute vector and then using that vector as the final representation. Rather, attribute prediction acts as an auxiliary task, while the learned attribute-oriented features are fused with the species-level visual representation. Therefore, the attribute module guides feature learning during training and supports species classification, while the inference process remains image-based.
+This distinction is important. The proposed model does not classify a bird by first predicting a complete attribute vector and then using that vector as the final representation. Attribute prediction is an auxiliary task, while the learned attribute-oriented features are fused with the species-level visual representation. Therefore, the attribute module guides feature learning during training and supports species classification, while inference remains image-based.
 
-Overall, this representation allows the model to exploit the semantic structure of CUB attributes without requiring manual attribute inputs at test time. It also enables different attribute selection strategies to be implemented through group masks, making it possible to compare FullAttr-312, HSDAS-199, Sibling-IVAS-188 and Random-199 under the same attribute-guided H-CAST framework.
+Overall, this representation allows the model to exploit the semantic structure of CUB attributes without requiring manual attribute inputs at test time. It also enables different attribute selection strategies to be implemented through group masks, making it possible to compare FullAttr-312, HSDAS-199, HSDAS-174, Sibling-IVAS-188, and Random-199 under the same attribute-guided hierarchical classification framework.

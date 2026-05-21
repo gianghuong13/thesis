@@ -1,6 +1,6 @@
 \section{Training Objective}
 
-The proposed model is trained with a combination of hierarchical visual consistency loss, optional Tree-Path KL divergence loss, auxiliary attribute prediction loss, and attribute attention diversity loss. The overall objective is designed to preserve the original hierarchical classification ability of H-CAST \cite{park2025visually}, while encouraging the species-level representation to encode discriminative attribute-oriented information.
+The proposed model is trained with a combination of hierarchical visual consistency loss, optional Tree-Path KL divergence loss, auxiliary attribute prediction loss, and optional attribute attention diversity regularization. The overall objective is designed to preserve the original hierarchical classification ability of H-CAST \cite{park2025visually}, while encouraging the species-level representation to encode discriminative attribute-oriented information.
 
 For the three-level CUB hierarchy, the model predicts species, family, and order labels. In addition, it predicts group-wise attribute labels for the active attribute groups selected by the attribute mask. The total training objective is written as
 \begin{equation}
@@ -18,6 +18,7 @@ For the three-level CUB hierarchy, the model predicts species, family, and order
 where \(\mathcal{L}_{HV}\) is the hierarchical visual consistency loss inherited from H-CAST, \(\mathcal{L}_{TK}\) is the optional Tree-Path KL divergence loss inherited from H-CAST, \(\mathcal{L}_{attr}\) is the auxiliary attribute prediction loss, and \(\mathcal{L}_{div}\) is the attribute attention diversity loss. The weights \(\alpha\), \(\lambda_{attr}\), and \(\lambda_{div}\) control the contribution of each additional loss term.
 
 In the original H-CAST formulation, \(\mathcal{L}_{HV}\) denotes the sum of classification losses across hierarchy levels. In this thesis, it corresponds to the level-wise classification loss over species, family, and order. In the implementation, \(\mathcal{L}_{TK}\) is enabled only when the global KL option is used. If this option is disabled, \(\alpha\) is effectively set to zero. Similarly, setting \(\lambda_{div}=0\) removes the diversity regularization term, and setting \(\lambda_{attr}=0\) removes the attribute prediction supervision.
+For the direct-fusion baseline without attribute-query cross-attention, \(\mathcal{L}_{div}\) is not applied because this baseline does not produce cross-attention maps from attribute-group queries to species-level graph nodes.
 
 \subsection{Hierarchical Visual Consistency Loss}
 
@@ -124,7 +125,7 @@ This loss encourages the concatenated predictions across order, family, and spec
 
 The proposed model uses multiple attribute-group queries to extract attribute-oriented features from species-level graph nodes. Without additional regularization, different attribute groups may attend to similar graph regions, which can make the attribute representations redundant. To reduce this issue, this thesis studies an attribute attention diversity loss.
 
-The diversity loss is inspired by the diversity component of Mutual-Channel Loss, but is adapted to attribute-group attention maps rather than class-specific convolutional channels \cite{Chang_2020}. In the original Mutual-Channel Loss, the diversity component encourages different channels to focus on different discriminative regions. In this thesis, the same high-level idea is applied to attribute-group attention: different semantic attribute groups should be encouraged to attend to complementary graph nodes.
+The diversity loss is inspired by the diversity component of Mutual-Channel Loss, but is adapted to attribute-group attention maps rather than class-specific convolutional channels \cite{Chang_2020}. In the original Mutual-Channel Loss, the diversity component encourages different channels to focus on different discriminative regions. In this thesis, the same high-level idea is applied to attribute-group attention: different semantic attribute groups are encouraged to produce less redundant internal attention patterns over graph nodes.
 
 Let
 \begin{equation}
@@ -175,7 +176,7 @@ The diversity loss is defined as the negative mean diversity score:
 
 Since the training objective is minimized, adding \(\lambda_{div}\mathcal{L}_{div}\) encourages the model to maximize the diversity score. If fewer than two macro-parts are active, the diversity loss is not meaningful and is set to zero.
 
-This loss does not use any pixel-level attribute localization labels. It only regularizes the internal cross-attention patterns learned by the attribute-group queries. Therefore, it should be understood as a soft diversity regularizer rather than direct supervision for attribute localization.
+This loss does not use any pixel-level or part-level attribute localization labels. It only regularizes the internal cross-attention patterns learned by the attribute-group queries. Therefore, it should be understood as a soft redundancy-reduction regularizer, not as supervision for attribute localization or as evidence that the model localizes semantic attributes.
 
 \subsection{Overall Objective}
 
@@ -194,4 +195,4 @@ Combining the above components, the final training loss is
 
 In the experiments, different settings can be obtained by changing the loss weights. For example, setting \(\lambda_{div}=0\) removes the attention diversity regularization, while setting \(\lambda_{div}=0.5\) enables the diversity term. Similarly, the contribution of attribute supervision is controlled by \(\lambda_{attr}\), and the semantic consistency loss is controlled by \(\alpha\).
 
-This objective combines hierarchical label supervision, semantic consistency regularization, auxiliary attribute supervision, and attention diversity regularization. The hierarchical classification loss trains the model to predict species, family, and order. The Tree-Path KL term encourages semantic consistency across taxonomy levels. The attribute prediction loss encourages the species-level branch to encode semantic bird traits. The diversity loss encourages attribute macro-parts to attend to complementary visual regions. Together, these components aim to improve fine-grained species discrimination while preserving hierarchical classification behavior.
+This objective combines hierarchical label supervision, semantic consistency regularization, auxiliary attribute supervision, and attention diversity regularization. The hierarchical classification loss trains the model to predict species, family, and order. The Tree-Path KL term encourages semantic consistency across taxonomy levels. The attribute prediction loss encourages the species-level branch to encode semantic bird traits. The diversity loss encourages less redundant attention patterns among attribute macro-parts in the cross-attention-based model. Together, these components aim to improve fine-grained species discrimination while preserving hierarchical classification behavior.

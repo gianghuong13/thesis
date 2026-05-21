@@ -1,8 +1,8 @@
 \section{Attribute-Guided Learning Module}
 
-This section describes the attribute-guided learning module added on top of the H-CAST backbone \cite{park2025visually}. The purpose of this module is to use CUB attribute annotations \cite{wah2011cub} as auxiliary supervision and to inject attribute-oriented information into species-level prediction. The module is designed specifically for the fine-grained species branch because species recognition requires subtle local cues, such as bill shape, wing pattern, breast color, crown color, and tail shape.
+This section describes the attribute-guided learning module added on top of the H-CAST backbone \cite{park2025visually}. The purpose of this module is to use CUB attribute annotations \cite{wah2011cub} as auxiliary semantic supervision and to inject attribute-oriented information into species-level prediction. The module is designed for the species branch because species recognition is the most fine-grained level of the task and is expected to benefit most from semantic traits such as bill shape, wing pattern, breast color, crown color, and tail shape.
 
-The proposed module has four main components: attribute-group queries, cross-attention over species-level graph features, group-specific attribute prediction heads, and species-level attribute fusion. Importantly, the module does not use one query or one classifier for each individual CUB attribute. Instead, it operates at the level of active attribute groups. Each active group corresponds to a semantic attribute type, such as \textit{bill shape}, \textit{wing color}, \textit{breast pattern}, or \textit{tail shape}.
+The proposed module has four main components: attribute-group queries, cross-attention over species-level graph features, group-specific attribute prediction heads, and species-level attribute fusion. Importantly, the module does not use one query or one classifier for each individual CUB attribute. Instead, it operates at the level of active attribute groups. Each active group corresponds to a semantic trait type, such as \textit{bill shape}, \textit{wing color}, \textit{breast pattern}, or \textit{tail shape}.
 
 \subsection{Attribute-Group Queries}
 
@@ -12,7 +12,7 @@ Let the set of active attribute groups be denoted as
     =
     \{g_1, g_2, \ldots, g_G\},
 \end{equation}
-where \(G\) is the number of active groups after applying the attribute mask. For the FullAttr-312 setting, \(G=28\) but for selected attribute subsets, groups with no retained attributes are removed.
+where \(G\) is the number of active groups after applying the attribute mask. For the FullAttr-312 setting, \(G=28\). For selected attribute subsets, groups with no retained attributes are removed.
 
 The model maintains one learnable query for each active attribute group. Let the learnable attribute-query matrix be
 \begin{equation}
@@ -29,7 +29,7 @@ For a mini-batch of size \(B\), the query matrix is expanded to
     \in
     \mathbb{R}^{B \times G \times D}.
 \end{equation}
-Before being used in attention, the queries are normalized with a layer normalization module. This normalization helps align the scale of the attribute queries with the H-CAST feature representations.
+Before being used in attention, the queries are normalized with layer normalization to align their scale with the H-CAST feature representations.
 
 \subsection{Cross-Attention over Species-Level Graph Features}
 
@@ -47,7 +47,7 @@ denote the species-level graph-node features, where \(N_s\) is the number of gra
 \end{equation}
 denote the species-level class token.
 
-For the CUB three-level hierarchy, attribute-group queries attend to graph-node features from the species-level stage. In the implementation, when the model predicts three levels, the species-level branch uses the graph nodes from the second H-CAST block and the corresponding species class token. The family and order predictions are produced from later, coarser H-CAST stages.
+For the CUB three-level hierarchy, the attribute-guided module uses graph-node features from the species-level stage. In the implementation, this corresponds to the graph nodes from the second H-CAST block and the corresponding species class token. Family and order predictions are produced from later and coarser H-CAST stages.
 
 The cross-attention operation uses attribute-group queries as queries, and species-level graph-node features as keys and values:
 \begin{equation}
@@ -68,7 +68,9 @@ where \(\mathrm{MHA}(\cdot)\) denotes multi-head attention \cite{vaswani2017atte
     \in
     \mathbb{R}^{B \times G \times D}.
 \end{equation}
-Each vector \(\mathbf{h}^{a}_{g}\) is an attribute-oriented representation for group \(g\). Intuitively, this operation allows each attribute group to extract visual evidence from the species-level graph nodes. For example, a query corresponding to \textit{bill shape} may learn to attend to regions related to the bird's bill, while a query corresponding to \textit{wing color} may learn to focus on wing-related segments. However, the model is not explicitly supervised with pixel-level attribute localization, so these attention patterns should be interpreted as learned internal representations rather than guaranteed attribute localizations.
+Each vector \(\mathbf{h}^{a}_{g}\) is an attribute-oriented representation for group \(g\).
+
+This operation allows each attribute group to extract an internal representation from the species-level graph nodes. However, the model is not trained with pixel-level or part-level attribute localization labels. Therefore, the attention weights should be interpreted as internal diagnostic signals rather than guaranteed localization maps of semantic attributes. This distinction is especially important for global groups such as \textit{size} and \textit{shape}, which do not correspond to one specific localized bird part.
 
 A key-padding mask is used in the attention operation to ignore invalid graph nodes introduced by padding. After cross-attention, the attribute-oriented features are normalized and passed through dropout:
 \begin{equation}
@@ -116,10 +118,10 @@ The attribute prediction loss is computed as
     \left(
         \mathbf{z}^{a}_{i,g},
         \tilde{t}_{i,g}
-    \right)
+    \right).
 \end{equation}
 
-The role of this auxiliary attribute loss is to encourage each group query to learn features related to its corresponding semantic trait. These attribute predictions are not used as discrete inputs for species classification. Instead, the continuous attribute-oriented features are used in the fusion stage.
+The role of this auxiliary attribute loss is to encourage the attribute-guided branch to encode information related to semantic bird traits. These attribute predictions are not used as discrete inputs for species classification. Instead, the continuous attribute-oriented features are used in the fusion stage.
 
 \subsection{Species-Level Attribute Fusion}
 
@@ -136,7 +138,7 @@ After obtaining the attribute-oriented features \(H^{a}\), the model aggregates 
 \qquad
 \mathbf{c}^{s}_{1} \in \mathbb{R}^{B \times 1 \times D},
 \end{equation}
-where \(\mathbf{c}^{s}_{1}\) is the species class token with an added sequence dimension. The output is then squeezed to obtain
+where \(\mathbf{c}^{s}_{1}\) is the species class token with an added sequence dimension. The output is squeezed to obtain
 \begin{equation}
     \mathbf{h}^{a}_{sum}
     \in
@@ -189,8 +191,44 @@ The attribute-guided fusion is applied to the species-level branch. Family and o
     f_o(\mathbf{c}^{o}).
 \end{equation}
 
-Therefore, attributes do not directly modify the family or order classifiers. Their primary effect is on species-level classification, where fine-grained attribute cues are expected to be most useful. Family and order predictions may still be indirectly affected during training because the whole network is optimized jointly, but there is no direct attribute fusion into those branches.
+Therefore, attributes do not directly modify the family or order classifiers. Their primary effect is on species-level classification, where fine-grained semantic traits are expected to be most useful. Family and order predictions may still be indirectly affected during training because the whole network is optimized jointly, but there is no direct attribute fusion into those branches.
+
+\subsection{Direct-Fusion Baseline without Cross-Attention}
+
+To evaluate whether attribute-query cross-attention is necessary, this thesis also considers a direct-fusion baseline without cross-attention. This baseline keeps the same image-only inference setting and the same group-wise attribute supervision, but removes the cross-attention operation between attribute-group queries and species-level graph nodes.
+
+Instead of computing \(H^{a}\) through cross-attention, the direct-fusion baseline generates group-wise attribute features directly from the species class token:
+\begin{equation}
+    H^{a}_{direct}
+    =
+    \mathrm{reshape}
+    \left(
+        \mathrm{MLP}_{direct}(\mathbf{c}^{s})
+    \right)
+    \in
+    \mathbb{R}^{B \times G \times D}.
+\end{equation}
+These direct attribute features are passed to the same group-specific attribute classifiers and are aggregated for species-level fusion. In the implemented baseline, the attribute summary can be obtained by averaging the group-wise features:
+\begin{equation}
+    \mathbf{h}^{a}_{sum}
+    =
+    \frac{1}{G}
+    \sum_{g \in \mathcal{G}_{active}}
+    \mathbf{h}^{a}_{g}.
+\end{equation}
+
+This baseline is used as a controlled comparison. If the full cross-attention model outperforms direct fusion, this suggests that extracting attribute-oriented information from species-level graph nodes provides additional benefit. If direct fusion performs similarly, then the improvement may come mainly from auxiliary attribute supervision, species-level fusion, or additional model capacity rather than from cross-attention itself.
+
+Because the direct-fusion baseline does not produce attribute-query spatial attention over graph nodes, the attribute attention diversity loss is not applied to this baseline.
+
+\subsection{Interpretation of Attention Signals}
+
+The cross-attention-based model produces attention weights from attribute-group queries to species-level graph nodes, and attention-pooling weights from the species class token to attribute-group features. These signals can be visualized for diagnostic analysis. However, they should not be interpreted as ground-truth attribute localization.
+
+There are two reasons for this. First, the CUB attributes used in this thesis are class-level attributes rather than image-specific attribute visibility annotations. Second, the model is trained for hierarchical classification and auxiliary attribute prediction, not for pixel-level or part-level localization. Therefore, attention visualization is used only to understand internal model behavior, while the main evidence for effectiveness comes from quantitative metrics, component ablations, and prediction-level case analysis.
 
 \subsection{Summary}
 
-The attribute-guided learning module extends H-CAST by adding attribute-oriented supervision and species-level fusion. It uses one learnable query for each active attribute group, applies cross-attention over species-level graph-node features, predicts retained attribute categories with group-specific classifiers, and fuses the attention-pooled attribute summary with the species class token. This design allows the model to exploit CUB attributes during training while keeping inference image-based. At test time, no manually provided attribute labels are required; the attribute queries and fusion module operate internally using only the image-derived H-CAST features.
+The attribute-guided learning module extends H-CAST by adding attribute-oriented supervision and species-level fusion. The main cross-attention version uses one learnable query for each active attribute group, applies cross-attention over species-level graph-node features, predicts retained attribute categories with group-specific classifiers, and fuses the attention-pooled attribute summary with the species class token. This design allows the model to exploit CUB attributes during training while keeping inference image-based.
+
+This thesis also evaluates a direct-fusion baseline without cross-attention to separate the effects of attribute supervision, feature fusion, cross-attention, and model capacity. At test time, no manually provided attribute labels are required; the attribute-guided module operates internally using only image-derived H-CAST features.

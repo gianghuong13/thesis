@@ -68,7 +68,7 @@ To address these gaps, this thesis studies the following research questions:
     Does Hard-Sibling Discriminative Attribute Selection (HSDAS) provide a more effective attribute subset than using all attributes, equally sized random subsets, or the internal Sibling-IVAS statistical baseline?
 
     \item \textbf{RQ5: Role of diversity regularization.}
-    How does attribute attention diversity regularization affect species accuracy, Full-Path Accuracy, weighted Average Precision, and taxonomy consistency?
+    How does diversity regularization affect species accuracy, Full-Path Accuracy, weighted Average Precision, and taxonomy consistency?
 
     \item \textbf{RQ6: Error behavior.}
     In which types of prediction errors does the attribute-guided model improve over the image-only hierarchical baseline, and do the improvements mainly occur in intra-family species confusions?
@@ -111,7 +111,7 @@ The scope of this research is limited to the CUB-200-2011 dataset. The study foc
 
 The CUB visual attributes are used only during training as auxiliary supervision. In the main setting of this thesis, class-level attribute annotations are used to supervise the group-wise attribute prediction heads. Therefore, all images from the same species share the same class-level attribute target. This setting is useful for injecting species-level semantic priors, but it does not model image-specific attribute visibility caused by pose, occlusion, viewpoint, or background variation.
 
-This thesis does not aim to perform attribute localization; attention and relevance maps are used only for diagnostic visualization and are not evaluated as localization results.
+In addition, attribute localization is outside the scope of this thesis, any visualization is used only for qualitative diagnosis of model behavior.
 
 The proposed attribute-guided module is applied primarily to the species-level prediction branch, because species recognition requires the most fine-grained visual evidence. Family and order predictions follow the higher-level hierarchical stages of the visual backbone. The main experiments follow the official CUB-200-2011 train/test protocol used in the H-CAST benchmark. Therefore, the conclusions are limited to this dataset and should not be assumed to generalize to other hierarchical classification tasks without further evaluation.
 
@@ -134,7 +134,7 @@ To evaluate whether attribute-query cross-attention is necessary, this thesis al
 
 Since not all CUB attributes are equally useful for distinguishing visually similar bird species, this thesis also investigates attribute selection. In particular, Hard-Sibling Discriminative Attribute Selection (HSDAS) selects attributes that help distinguish a species from its sibling species within the same family, with emphasis on hard siblings that have similar attribute profiles. HSDAS is compared with using all attributes, an internal node-vs-siblings statistical selection baseline called Sibling-IVAS, and random attribute subsets.
 
-For the cross-attention-based model, this thesis also evaluates an attribute attention diversity regularization term. This term is intended to reduce redundancy among macro-part-level attribute attention patterns. Because attribute localization is not an objective of this thesis, attention visualizations are used only as diagnostic evidence for model behavior rather than as localization results.
+For the cross-attention-based model, this thesis also evaluates an optional diversity regularization term that encourages attribute-group attention patterns to be less redundant.
 
 
 
@@ -160,7 +160,7 @@ The main contributions of this thesis are as follows:
     This thesis studies HSDAS, an attribute selection strategy that prioritizes attributes useful for distinguishing visually similar sibling species within the same family.
 
     \item \textbf{Component-wise evaluation and diagnostic analysis.}
-    The proposed method is evaluated through main comparison with an image-only hierarchical baseline, fusion and attribute-loss ablations, cross-attention versus direct-fusion comparison, attribute mask comparison, diversity-loss analysis, random attribute controls, prediction-level error analysis, and diagnostic attention/relevance analysis.
+    The proposed method is evaluated through main comparison with an image-only hierarchical baseline, fusion and attribute-loss ablations, cross-attention versus direct-fusion comparison, attribute mask comparison, diversity-loss analysis, random attribute controls, prediction-level error analysis, and qualitative diagnostic analysis.
 \end{itemize}
 
 
@@ -177,7 +177,7 @@ The remainder of this thesis is organized as follows:
 
     \item \textbf{Chapter 3} presents the proposed attribute-guided hierarchical bird classification framework, including the H-CAST backbone, group-wise attribute representation, HSDAS attribute selection, attribute-guided learning module, training objective, and inference procedure.
 
-    \item \textbf{Chapter 4} describes the experimental setup, evaluation metrics, main results, component ablations, direct-fusion comparison, attribute selection studies, diversity-loss analysis, prediction-level error analysis, and diagnostic attention/relevance visualizations.
+    \item \textbf{Chapter 4} Chapter 4 describes the experimental setup, evaluation metrics, main results, component ablations, direct-fusion comparison, attribute selection studies, diversity-loss analysis, prediction-level error analysis, and qualitative diagnostic analysis.
 
     \item \textbf{Chapter 5} summarizes the thesis, discusses limitations, and suggests future research directions.
 \end{itemize}

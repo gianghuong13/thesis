@@ -1,4 +1,4 @@
-\begin{thebibliography}{43}
+\begin{thebibliography}{44}
 \providecommand{\natexlab}[1]{#1}
 \providecommand{\url}[1]{\texttt{#1}}
 \expandafter\ifx\csname urlstyle\endcsname\relax
@@ -124,6 +124,11 @@ Hai Liu, Cheng Zhang, Yongjian Deng, Bochen Xie, Tingting Liu, and You-Fu Li.
 \newblock Transifc: Invariant cues-aware feature concentration learning for efficient fine-grained bird image classification.
 \newblock \emph{IEEE Transactions on Multimedia}, 27:\penalty0 1677--1690, 2025.
 \newblock \doi{10.1109/TMM.2023.3238548}.
+
+\bibitem[Liu et~al.(2024)Liu, Roy, Li, Zhong, Sebe, and Ricci]{liu2024democratizing}
+Mingxuan Liu, Subhankar Roy, Wenjing Li, Zhun Zhong, Nicu Sebe, and Elisa Ricci.
+\newblock Democratizing fine-grained visual recognition with large language models.
+\newblock \emph{arXiv preprint arXiv:2401.13837}, 2024.
 
 \bibitem[Liu et~al.(2017)Liu, Wang, Wen, Ding, and Lin]{liu2017localizing}
 Xiao Liu, Jiang Wang, Shilei Wen, Errui Ding, and Yuanqing Lin.

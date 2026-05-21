@@ -1,14 +1,14 @@
 \section{Problem Formulation}
 
-This thesis addresses supervised hierarchical bird image classification on the CUB-200-2011 dataset. Each input sample is a bird image associated with a species label, and each species belongs to a fixed taxonomic hierarchy. In this work, the hierarchy contains three levels: order, family, and species. The species level is the finest level, while family and order represent progressively coarser semantic categories.
+This thesis studies supervised attribute-guided fine-grained hierarchical bird image classification on the CUB-200-2011 dataset. Each input sample is a bird image associated with a species label, and each species belongs to a fixed biological taxonomy. In this work, the hierarchy contains three levels: order, family, and species. The species level is the finest level, while family and order represent progressively coarser semantic categories.
 
 Let the training set be denoted as
 \begin{equation}
     \mathcal{D} = \{(x_i, y_i^{s}, y_i^{f}, y_i^{o})\}_{i=1}^{N},
 \end{equation}
-where \(x_i\) is the input image, \(y_i^{s}\) is the species label, \(y_i^{f}\) is the family label, and \(y_i^{o}\) is the order label. The label spaces are denoted by \(\mathcal{Y}^{s}\), \(\mathcal{Y}^{f}\), and \(\mathcal{Y}^{o}\), respectively. During model computation, each image is also converted into an initial superpixel partition, which is generated automatically by using SEEDS \cite{van2015seeds} and is not treated as an additional ground-truth label. For CUB-200-2011, \(\mathcal{Y}^{s}\) contains 200 species \cite{wah2011cub}. Following the hierarchical setting used in H-CAST, these species are organized into 38 families and 13 orders \cite{park2025visually}.
+where \(x_i\) is the input image, \(y_i^{s}\) is the species label, \(y_i^{f}\) is the family label, and \(y_i^{o}\) is the order label. The label spaces are denoted by \(\mathcal{Y}^{s}\), \(\mathcal{Y}^{f}\), and \(\mathcal{Y}^{o}\), respectively. During model computation, each image is also converted into an initial superpixel partition using SEEDS \cite{van2015seeds}. This partition is generated automatically and is not treated as an additional ground-truth label.
 
-The taxonomy defines parent-child mappings between levels. Let
+For CUB-200-2011, \(\mathcal{Y}^{s}\) contains 200 species \cite{wah2011cub}. Following the hierarchical setting used in H-CAST, these species are organized into 38 families and 13 orders \cite{park2025visually}. The taxonomy defines parent-child mappings between levels. Let
 \begin{equation}
     \pi_f : \mathcal{Y}^{s} \rightarrow \mathcal{Y}^{f}
 \end{equation}
@@ -23,9 +23,10 @@ be the mapping from a family to its parent order. Therefore, for each training s
     y_i^{o} = \pi_o(y_i^{f}).
 \end{equation}
 
-The goal of the model is to learn a function \(f_{\theta}\) that predicts all three taxonomy levels from an input image:
+The main task is to learn an image-based classifier \(f_{\theta}\) that predicts all three taxonomy levels:
 \begin{equation}
-    f_{\theta}(x_i) = 
+    f_{\theta}(x_i)
+    =
     (\hat{y}_i^{s}, \hat{y}_i^{f}, \hat{y}_i^{o}),
 \end{equation}
 where \(\hat{y}_i^{s}\), \(\hat{y}_i^{f}\), and \(\hat{y}_i^{o}\) are the predicted species, family, and order labels. A prediction is taxonomically consistent if the predicted labels form a valid path in the hierarchy:
@@ -40,10 +41,11 @@ In addition to taxonomy labels, CUB-200-2011 provides visual attribute annotatio
 \begin{equation}
     \mathbf{a}_{c} \in \mathbb{R}^{312}.
 \end{equation}
-These attributes describe semantic bird traits such as bill shape, wing color, breast pattern, tail shape, crown color, and other part-based properties. In this thesis, attributes are used as class-level auxiliary supervision. For an image \(x_i\) with species label \(y_i^{s}\), the corresponding attribute target is obtained from the class-level attribute vector:
+These attributes describe semantic bird traits such as bill shape, wing color, breast pattern, tail shape, crown color, and other part-based or global properties. In this thesis, attributes are used as class-level auxiliary supervision. For an image \(x_i\) with species label \(y_i^{s}\), the corresponding attribute target is obtained from the class-level attribute vector:
 \begin{equation}
     \mathbf{a}_i = \mathbf{a}_{y_i^{s}}.
 \end{equation}
+Therefore, all images from the same species share the same attribute target. This setting injects species-level semantic priors during training, but it does not model image-specific attribute visibility.
 
 The 312 CUB attributes are organized into semantic groups. Let
 \begin{equation}
@@ -51,16 +53,18 @@ The 312 CUB attributes are organized into semantic groups. Let
 \end{equation}
 denote the set of attribute groups, where each group corresponds to a bird trait type such as bill shape, wing color, head pattern, or tail shape. Each group \(g\) contains a set of attribute indices \(I_g\). Instead of treating all 312 attributes as independent binary labels, the proposed model formulates attribute prediction as a group-wise classification problem. For each group \(g\), the target attribute category is determined from the attribute values within that group:
 \begin{equation}
-    t_{i,g} = \arg\max_{j \in I_g} a_{i,j}.
+    t_{i,g}
+    =
+    \arg\max_{j \in I_g} a_{i,j}.
 \end{equation}
 
 When an attribute selection mask is used, only a subset of attributes is retained. Let \(M_g \subseteq I_g\) denote the selected attribute indices for group \(g\). If \(t_{i,g} \in M_g\), the target is remapped to a local class index:
 \begin{equation}
     \tilde{t}_{i,g} = \phi_g(t_{i,g}),
 \end{equation}
-where \(\phi_g(\cdot)\) maps an original CUB attribute index to its local index within the selected group \(M_g\). If \(t_{i,g} \notin M_g\), then \(\tilde{t}_{i,g}\) is assigned an ignore label and excluded from the attribute loss. This formulation allows the model to train with compact selected attribute subsets such as HSDAS-199, while preserving the group-wise semantic structure of CUB attributes.
+where \(\phi_g(\cdot)\) maps an original CUB attribute index to its local index within the selected group \(M_g\). If \(t_{i,g} \notin M_g\), then \(\tilde{t}_{i,g}\) is assigned an ignore label and excluded from the attribute loss. This formulation allows the model to train with compact selected attribute subsets such as HSDAS-199 while preserving the group-wise semantic structure of CUB attributes.
 
-The proposed model therefore produces two types of outputs. The first type is the hierarchical classification output:
+The model produces two types of outputs during training. The first type is the hierarchical classification output:
 \begin{equation}
     (\mathbf{z}_i^{s}, \mathbf{z}_i^{f}, \mathbf{z}_i^{o}),
 \end{equation}
@@ -68,8 +72,8 @@ where \(\mathbf{z}_i^{s}\), \(\mathbf{z}_i^{f}\), and \(\mathbf{z}_i^{o}\) are t
 \begin{equation}
     \{\mathbf{z}_{i,g}^{a}\}_{g \in \mathcal{G}_{active}},
 \end{equation}
-where \(\mathcal{G}_{active}\) is the set of attribute groups retained by the selected attribute mask, and \(\mathbf{z}_{i,g}^{a}\) is the logit vector for attribute group \(g\).
+where \(\mathcal{G}_{active}\) is the set of active attribute groups retained by the selected attribute mask, and \(\mathbf{z}_{i,g}^{a}\) is the logit vector for attribute group \(g\).
 
-The main classification task is supervised by the species, family, and order labels. The auxiliary attribute task is supervised by the selected group-wise attribute targets. Importantly, attribute labels are used only during training. During inference, the model receives only an input image and predicts the taxonomic labels. No manually provided attribute labels are required at test time.
+The main classification task is supervised by species, family, and order labels. The auxiliary attribute task is supervised by the selected group-wise attribute targets. Importantly, attribute labels are used only during training. During inference, the model receives only an input image and predicts the taxonomic labels. No manually provided attribute labels are required at test time.
 
-Overall, the problem studied in this thesis can be summarized as follows: given an input bird image and a known taxonomy, learn an image-based hierarchical classifier that predicts species, family, and order labels, while using CUB attribute annotations during training to guide the species-level visual representation. The proposed method aims to improve fine-grained species discrimination and maintain hierarchical prediction quality by combining H-CAST visual representations with attribute-guided learning.
+Overall, the problem studied in this chapter is to learn an image-based hierarchical classifier that predicts species, family, and order labels, while using CUB attribute annotations during training to guide the species-level visual representation. The proposed method instantiates this formulation on top of H-CAST and studies whether attribute-guided learning can improve fine-grained species discrimination while maintaining hierarchical prediction quality.

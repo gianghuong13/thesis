@@ -6,6 +6,8 @@ Given an input image \(x\), the model first computes hierarchical visual represe
 
 For species prediction, the model additionally uses the attribute-guided module. The attribute-group queries attend to the species-level graph-node features and produce attribute-oriented representations internally. These representations are not compared with ground-truth attribute labels during inference, since attribute labels are not used at test time. Instead, they are used only as learned visual features.
 
+For the direct-fusion baseline without cross-attention, the inference process remains image-only as well. The difference is that the group-wise attribute features are generated directly from the species class token instead of being produced by attribute-query cross-attention over species-level graph nodes. No attribute labels are used in either case during inference.
+
 The attribute-oriented features are aggregated by the attention-pooling module to obtain an attribute summary vector. This summary vector is concatenated with the species-level class token, and the concatenated representation is passed through the fusion MLP to obtain the fused species feature:
 \begin{equation}
     \mathbf{h}^{s}_{fused}
@@ -59,4 +61,4 @@ following the notation used in the problem formulation. When reported as a root-
 \end{equation}
 corresponding to order, family, and species. The attribute branch contributes to the prediction only through its learned internal representations. It does not require attribute annotations, manual attribute descriptions, or any additional non-image input during inference.
 
-This design preserves the practical inference setting of the original H-CAST model. The proposed attribute-guided module improves representation learning during training, but deployment remains the same as a standard image-based hierarchical classifier.
+This design preserves the practical image-only inference setting of the original hierarchical backbone. The proposed attribute-guided module improves representation learning during training, but deployment remains the same as a standard image-based hierarchical classifier.
