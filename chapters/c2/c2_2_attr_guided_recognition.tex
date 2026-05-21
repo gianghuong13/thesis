@@ -1,4 +1,4 @@
-\section{Attribute-Based and Attribute-Guided Recognition}
+\section{Attribute-Based and Prompt-Assisted Fine-Grained Recognition}
 
 Visual attributes provide a semantic description of object appearance. Instead of representing an object only by its category label, attributes describe human-interpretable properties such as color, shape, texture, pattern, or part configuration. In image recognition, this representation is useful because many visual categories share common properties. For example, different bird species may share attributes such as a pointed bill or striped wings, while still differing in other subtle traits. Therefore, attributes can serve as an intermediate semantic layer between low-level visual features and high-level class labels.
 
@@ -22,6 +22,13 @@ The main advantage of attribute supervision is that it introduces structured sem
 
 However, attribute supervision also introduces challenges. First, not all attributes are equally useful for a specific classification problem. Some attributes may be common across many classes and therefore weakly discriminative. Second, different attributes may be redundant, especially when they describe correlated visual properties. Third, noisy or irrelevant attributes may distract the model from the main classification objective. This concern is consistent with recent work on attribute-based visual recognition showing that very large automatically generated attribute sets can contain substantial noise, and that concise attribute subsets may preserve performance while improving interpretability \cite{yan2023learning}. These challenges motivate the attribute selection component studied later in this thesis.
 
+
+
+\subsection{Prompt-Assisted Attribute Reasoning}
+
+Recent prompt-based and language-assisted fine-grained recognition methods suggest that semantic visual descriptions can help when direct subordinate-level recognition is difficult. For example, FineR uses visual question answering models to extract part-level visual attributes, such as wing color, head pattern, and tail pattern, and then uses large language models to reason about possible fine-grained category names from these semantic descriptions \cite{liu2024democratizing}. Related work on fine-grained visual descriptions also shows that textual or semantic descriptions can provide useful side information for representing fine-grained categories \cite{reed2016learning}. These studies support the view that attributes can act as intermediate semantic evidence between raw image features and fine-grained class decisions.
+
+However, this thesis studies a different setting. It does not use prompts, large language models, or manually provided attribute descriptions at inference time. Instead, it uses the structured CUB visual attributes as training-time auxiliary supervision in a supervised hierarchical classification framework \cite{wah2011cub}. Thus, prompt-assisted recognition motivates the usefulness of attributes, while the proposed method studies how such information can be incorporated into an image-only hierarchical classifier.
 
 
 
