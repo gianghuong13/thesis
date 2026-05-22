@@ -1,18 +1,149 @@
 \section{Ablation Studies}
 
-This section analyzes the contribution of different components of the proposed method. All ablation studies follow the official CUB-200-2011 train/test protocol. The goal is to understand how attribute selection, attribute subset size, diversity loss, and random attribute selection affect the final performance. 
-Unless otherwise stated, attribute-guided variants use species-level fusion with \(\lambda_{attr}=0.5\) and \(\lambda_{div}=0.5\). The diversity-loss ablation varies only \(\lambda_{div}\), while the fusion-design ablation varies the use of fusion, attribute supervision, and diversity regularization.
+This section analyzes the contribution of different components of the proposed method under the official CUB-200-2011 train/test protocol. The ablation studies are organized according to the research questions defined in Chapter~1. The fusion-design ablation addresses RQ2 and RQ3 by separating the effects of species-level fusion, auxiliary attribute supervision, and attribute-query cross-attention. The attribute selection and subset-size ablations address RQ4 by comparing HSDAS with FullAttr-312, Sibling-IVAS-188, Random-199, and different HSDAS subset sizes. The diversity-loss ablation addresses RQ5 by varying \(\lambda_{div}\). The random attribute control further analyzes whether HSDAS-199 improves over group-matched random masks or simply benefits from using fewer attributes.
+Unless otherwise stated, attribute-guided variants use HSDAS-199, species-level fusion, \(\lambda_{attr}=0.5\), and \(\lambda_{div}=0.5\). For direct-fusion baselines, the attribute-query cross-attention module is removed and \(\lambda_{div}=0\), because the direct-fusion model does not produce attribute-query cross-attention maps.
+
+
+
+
+
+
+
+
+\subsection{Effect of Attribute Fusion Design}
+
+This ablation addresses RQ2 and RQ3 by analyzing the contribution of auxiliary attribute supervision, species-level fusion, attribute-query cross-attention, and diversity regularization.
+
+\begin{table}[t]
+    \centering
+    \caption{Effect of fusion design, auxiliary attribute supervision, cross-attention, and diversity regularization under the official CUB train/test protocol. For settings with \(\lambda_{attr}=0\), attribute accuracy is reported only as a diagnostic value because the attribute heads are not supervised.}
+    \label{tab:fusion_design_ablation}
+    \scriptsize
+    \setlength{\tabcolsep}{2.2pt}
+    \renewcommand{\arraystretch}{1.12}
+    \begin{adjustbox}{max width=\textwidth}
+    \begin{tabular}{@{}lccccccccc@{}}
+        \hline
+        \textbf{Method} 
+        & \textbf{Cross-attn} 
+        & \textbf{Species fusion} 
+        & \(\lambda_{attr}\) 
+        & \(\lambda_{div}\) 
+        & \textbf{FPA} 
+        & \textbf{Species} 
+        & \textbf{wAP} 
+        & \textbf{TICE} 
+        & \textbf{Attr} \\
+        \hline
+
+        H-CAST rerun 
+        & -- & -- & -- & -- 
+        & 82.86 & 84.55 & 86.90 & 4.35 & -- \\
+
+        \makecell[l]{No species fusion}
+        & \(\checkmark\) & -- & 0.5 & 0.0 
+        & 83.09 & 84.38 & 86.82 & 3.54 & 89.04 \\
+
+        \makecell[l]{Direct fusion\\no AttrLoss}
+        & -- & \(\checkmark\) & 0.0 & 0.0 
+        & 83.93 & 85.35 & 87.63 & 3.64 & 21.17 \\
+
+        \makecell[l]{Direct fusion\\with AttrLoss}
+        & -- & \(\checkmark\) & 0.5 & 0.0 
+        & 84.05 & 85.50 & 87.72 & 3.76 & \textbf{92.24} \\
+
+        \makecell[l]{Cross-attn fusion\\no AttrLoss}
+        & \(\checkmark\) & \(\checkmark\) & 0.0 & 0.0 
+        & 83.73 & 85.21 & 87.47 & 3.87 & 23.02 \\
+
+        \makecell[l]{Cross-attn fusion\\with AttrLoss}
+        & \(\checkmark\) & \(\checkmark\) & 0.5 & 0.0 
+        & 84.16 & 85.47 & 87.69 & \textbf{3.14} & 87.01 \\
+
+        \makecell[l]{Full model}
+        & \(\checkmark\) & \(\checkmark\) & 0.5 & 0.5 
+        & \textbf{84.36} & \textbf{85.83} & \textbf{88.00} & 3.62 & 87.04 \\
+        \hline
+    \end{tabular}
+    \end{adjustbox}
+\end{table}
+
+The direct-fusion baselines provide the control requested by RQ3. Direct fusion without auxiliary attribute supervision improves over the H-CAST rerun, increasing FPA from 82.86\% to 83.93\%, species accuracy from 84.55\% to 85.35\%, and wAP from 86.90\% to 87.63\%. This indicates that part of the improvement can come from additional species-level feature transformation and fusion capacity.
+
+Adding auxiliary attribute supervision to direct fusion further improves FPA from 83.93\% to 84.05\%, species accuracy from 85.35\% to 85.50\%, and wAP from 87.63\% to 87.72\%. Attribute accuracy also increases sharply from 21.17\% to 92.24\%, showing that the direct-fusion attribute heads learn the auxiliary attribute task when supervised. However, this improvement in attribute accuracy does not translate into the best classification performance.
+
+The comparison between direct fusion with attribute loss and cross-attention fusion with attribute loss but no diversity is mixed. Cross-attention fusion obtains lower TICE, while direct fusion obtains slightly higher species accuracy and wAP. Therefore, cross-attention alone should not be claimed to dominate direct fusion in every metric. The strongest result is obtained by the full model, which combines cross-attention, auxiliary attribute supervision, species-level fusion, and diversity regularization. It achieves the best FPA, species accuracy, and wAP among the component variants.
+
+Overall, this ablation shows that the final improvement is not caused by a single factor. Direct species-level fusion can already improve over the image-only baseline, suggesting that additional species-level transformation capacity contributes to the gain. Auxiliary attribute supervision provides further semantic guidance, and the full cross-attention-based model with diversity regularization gives the strongest fine-grained classification result.
+
+
+
+
+
+\subsection{Inference-Time Attribute Summary Ablation}
+
+The previous ablations compare different trained model variants. To further examine whether the trained species classifier actually uses the attribute-oriented representation, this thesis conducts an inference-time ablation on the attribute summary vector. In this experiment, the model is trained normally using the full proposed setting, and only the attribute summary vector is modified during evaluation. No retraining is performed.
+
+This analysis considers three diagnostic interventions. First, in the \textit{zero-summary} setting, the attribute summary vector is replaced with a zero vector before the fusion MLP. This tests whether the trained species classifier depends on the attribute summary. Second, in the \textit{shuffled-summary} setting, attribute summary vectors are shuffled across images within the same mini-batch. This preserves the general distribution of attribute summaries but breaks the correspondence between the input image and its attribute-oriented representation. Third, in the \textit{CLS-only} setting, the attribute summary vector and fusion MLP are bypassed, and the species class token is directly passed to the species classifier. This last setting is a strong diagnostic intervention rather than a fair baseline, because the species classifier was trained on fused species features rather than on the raw species class token.
+
+\begin{table}[t]
+    \centering
+    \caption{
+    Inference-time ablation of the attribute summary vector. 
+    The model is trained normally; only the attribute summary vector or the fusion path is modified during evaluation. 
+    Higher is better for Species, Family, Order, Attr, and FPA; lower is better for TICE.
+    }
+    \label{tab:inference_attr_summary_ablation}
+    \small
+    \setlength{\tabcolsep}{4pt}
+    \renewcommand{\arraystretch}{1.12}
+    \begin{tabular}{lcccccc}
+        \hline
+        \textbf{Inference mode}
+        & \textbf{FPA}
+        & \textbf{Species} 
+        & \textbf{Family} 
+        & \textbf{Order} 
+        & \textbf{Attr}  
+        & \textbf{TICE} \\
+        \hline
+
+        Normal full model
+        & 84.36 & 85.83 & 95.62 & 99.03 & 87.04 & 3.62 \\
+
+        Zero attribute summary
+        & 81.03 & 82.33 & 95.62 & 99.03 & 87.04 & 6.28 \\
+
+        Shuffled attribute summary
+        & 71.23 & 72.32 & 95.63 & 99.03 & 87.04 & 15.91 \\
+
+        CLS only
+        & 0.40 & 0.40 & 95.62 & 99.03 & 87.04 & 95.67 \\
+        \hline
+    \end{tabular}
+\end{table}
+
+Table~\ref{tab:inference_attr_summary_ablation} shows that the attribute summary vector has a clear effect on species-level prediction. When the attribute summary is replaced with a zero vector, species accuracy decreases from 85.83\% to 82.33\%, and FPA decreases from 84.36\% to 81.03\%. TICE also increases from 3.62\% to 6.28\%. This indicates that the trained species classifier does not ignore the attribute-oriented representation.
+
+The shuffled-summary setting causes a much larger degradation. Species accuracy decreases to 72.32\%, FPA decreases to 71.23\%, and TICE increases to 15.91\%. Since the shuffled setting preserves the existence and general distribution of attribute summary vectors but mismatches them across images, this result suggests that the attribute summary is image-conditioned and must correspond to the current input image to support species prediction. In other words, the attribute summary does not simply act as a constant bias term; it carries image-dependent information used by the species classifier.
+
+Family and order accuracies remain almost unchanged across the zero-summary and shuffled-summary settings. This is expected because the attribute-guided fusion is applied only to the species-level branch. Family and order predictions are still produced from the higher-level H-CAST stages and are not directly fused with the attribute summary vector. Similarly, attribute prediction accuracy remains almost unchanged because the attribute heads are computed from attribute-oriented features before the attribute summary is modified.
+
+The CLS-only setting leads to a near collapse of species accuracy. This result should be interpreted carefully. The CLS-only setting bypasses both the attribute summary and the fusion MLP, and passes the raw species class token directly to a classifier that was trained on fused species features. Therefore, this setting introduces a severe distribution shift and should not be interpreted as an image-only H-CAST baseline. Instead, it is reported as a diagnostic stress test showing that the trained species head is highly dependent on the fused representation produced by the proposed species-level branch.
+
+Overall, this inference-time ablation provides additional evidence that the performance gain of the proposed model is related to the attribute-oriented representation used in the species branch. Together with the fusion-design ablation, it supports the interpretation that attribute-guided learning improves H-CAST primarily by modifying the species-level representation and decision boundary, rather than by producing visually obvious attention localization patterns.
+
 
 
 
 
 \subsection{Effect of Attribute Selection}
 
-This ablation evaluates different attribute usage strategies. It addresses RQ2 and RQ3 by comparing compact selected subsets with FullAttr-312 and by comparing HSDAS with Random-199 and Sibling-IVAS-188.
+This ablation addresses RQ4 by comparing HSDAS with FullAttr-312, Sibling-IVAS-188, and Random-199.
 
 \begin{table}[t]
     \centering
-    \caption{Effect of attribute selection strategy under the official CUB train/test protocol. Random-199 is reported as the mean over three random seeds.}
+    \caption{Effect of attribute selection strategy under the official CUB train/test protocol. Random-199 is summarized by its mean over three random masks; the individual seeds and standard deviations are reported in Table~\ref{tab:random_control}.}
     \label{tab:attr_selection_ablation}
     \scriptsize
     \setlength{\tabcolsep}{3pt}
@@ -33,7 +164,7 @@ This ablation evaluates different attribute usage strategies. It addresses RQ2 a
 
 Among the evaluated attribute usage strategies shown in Table \ref{tab:attr_selection_ablation}, HSDAS-199 achieves the highest species accuracy and wAP. It also achieves higher FPA than FullAttr-312, Sibling-IVAS-188, and the Random-199 mean, although Random-199 seed 2 slightly exceeds it in FPA as discussed later. Compared with FullAttr-312, HSDAS-199 improves species accuracy from 85.59\% to 85.83\% and wAP from 87.80\% to 88.00\%, while using fewer attributes. This suggests that a compact hard-sibling-aware subset can be more useful for species-level discrimination than using all available attributes. However, the improvement over FullAttr-312 is moderate, and FullAttr-312 obtains a lower TICE. Therefore, HSDAS-199 should not be interpreted as strictly better in all aspects.
 
-Compared with Sibling-IVAS-188, HSDAS-199 improves FPA, species accuracy, order accuracy, and wAP. Sibling-IVAS-188 is already a taxonomy-aware internal baseline because it compares each node with sibling-based negative sets. Therefore, the improvement of HSDAS over Sibling-IVAS suggests that explicitly emphasizing hard siblings with similar class-level attribute profiles provides additional benefit for fine-grained species discrimination.
+Compared with Sibling-IVAS-188, HSDAS-199 improves FPA, species accuracy, order accuracy, and wAP. Sibling-IVAS-188 is already a taxonomy-aware internal baseline because it compares each node with sibling-based negative sets. Therefore, Therefore, the improvement of HSDAS over Sibling-IVAS suggests that explicitly emphasizing hard siblings with similar class-level attribute profiles may provide additional benefit for fine-grained species discrimination.
 
 The comparison with Random-199 should be interpreted carefully. HSDAS-199 improves over the Random-199 average in FPA, species accuracy, order accuracy, and wAP. It also achieves higher species accuracy than all three random seeds. However, Random-199 obtains better family accuracy and lower TICE on average, and one random seed obtains slightly higher FPA than HSDAS-199. Therefore, the result supports HSDAS as a useful species-discrimination-oriented selection strategy, but it does not support a strong claim that HSDAS dominates random selection in every metric.
 
@@ -53,7 +184,7 @@ Attribute prediction accuracy is reported only as a diagnostic metric. Random-19
 
 \subsection{Effect of Attribute Subset Size}
 
-This ablation studies how the number of selected attributes affects performance. In this experiment, the HSDAS selection strategy is evaluated with different top-\(k\) settings, with the results shown in Table \ref{tab:attr_subset_size}. \textbf{HSDAS-174} is obtained by selecting the top 3 attributes for each species and then taking the union of selected attributes. \textbf{HSDAS-199} is obtained by selecting the top 5 attributes for each species. FullAttr-312 is included as the reference setting that uses all CUB attributes.
+This ablation further supports RQ4 by examining whether the number of selected HSDAS attributes affects performance.
 
 \begin{table}[t]
     \centering
@@ -83,6 +214,7 @@ The results show that increasing HSDAS selection from top-3 to top-5 attributes 
 However, the improvement is not uniform across all metrics. HSDAS top-3 obtains lower TICE and higher attribute prediction accuracy than HSDAS top-5. This suggests that the more compact top-3 subset may be easier for the attribute branch to predict and is associated with lower TICE in this experiment. In contrast, the top-5 subset slightly improves species-level discrimination and wAP but increases TICE.
 
 Compared with FullAttr-312, both HSDAS subsets achieve higher species accuracy and wAP while using fewer attributes. FullAttr-312 provides the best TICE and slightly higher family accuracy, but its species accuracy and wAP are lower than both HSDAS variants.
+
 Overall, HSDAS top-5 is selected as the main proposed setting because it achieves the best species accuracy, FPA, and wAP among the subset-size variants. However, HSDAS top-3 remains a competitive compact alternative, with better attribute prediction accuracy and lower TICE.
 
 
@@ -96,7 +228,7 @@ Overall, HSDAS top-5 is selected as the main proposed setting because it achieve
 
 \subsection{Effect of Attribute Diversity Loss}
 
-This ablation evaluates the role of the attribute attention diversity loss. It contributes to RQ4 by analyzing how diversity regularization affects species accuracy, FPA, wAP, and taxonomy consistency.
+This ablation addresses RQ5 by analyzing how diversity regularization affects species accuracy, FPA, wAP, and taxonomy consistency.
 
 \begin{table}[t]
     \centering
@@ -127,62 +259,9 @@ The results in Table~\ref{tab:diversity_loss_ablation} suggest that the diversit
 
 The no-diversity setting obtains the lowest TICE. This indicates that the model can produce more taxonomically consistent paths when the diversity regularizer is removed. In contrast, the best species accuracy is obtained with \(\lambda_{div}=0.5\), which has higher TICE. This suggests a trade-off between species-level discrimination and taxonomy consistency.
 
-One possible explanation is that the diversity loss is intended to encourage attribute macro-parts to use more complementary graph-node evidence, which may improve species prediction. However, because family and order predictions are not directly fused with attribute features, changes in species prediction may not always be matched by corresponding changes in the coarser predictions. This can increase path inconsistency even when species accuracy improves.
+One possible explanation is that the diversity loss encourages less redundant internal attention patterns among broad attribute groups, which may improve species prediction. However, because family and order predictions are not directly fused with attribute features, changes in species prediction may not always be matched by corresponding changes in the coarser predictions. This can increase path inconsistency even when species accuracy improves.
 
-The result with \(\lambda_{div}=1.0\) suggests that too much diversity regularization may become harmful. A strong diversity constraint may force attention maps to spread or separate even when the image contains only a few truly discriminative cues. Therefore, the diversity loss should be treated as a regularizer that requires careful weighting rather than a universally beneficial component.
-
-
-
-
-
-
-
-\subsection{Effect of Attribute Fusion Design}
-
-This ablation directly addresses RQ4 by analyzing the contribution of auxiliary attribute supervision, species-level attribute fusion, and diversity regularization. The results are shown in Table \ref{tab:fusion_design_ablation}.
-
-\begin{table}[t]
-    \centering
-    \caption{Effect of attribute supervision, species-level fusion, and diversity regularization under the official CUB train/test protocol.}
-    \label{tab:fusion_design_ablation}
-    \scriptsize
-    \setlength{\tabcolsep}{3pt}
-    \renewcommand{\arraystretch}{1.12}
-    \begin{adjustbox}{max width=\textwidth}
-    \begin{tabular}{@{}lccccccc@{}}
-        \hline
-        \textbf{Method} & \textbf{FPA} & \textbf{Species} & \textbf{Family} & \textbf{Order} & \textbf{wAP} & \textbf{TICE} & \textbf{Attr} \\
-        \hline
-        H-CAST rerun 
-        & 82.86 & 84.55 & 95.22 & 98.74 & 86.90 & 4.35 & -- \\
-
-        \makecell[l]{No fusion\\ \(\lambda_{attr}=0.5,\lambda_{div}=0\)}
-        & 83.09 & 84.38 & 95.58 & 98.72 & 86.82 & 3.54 & \textbf{89.04} \\
-
-        \makecell[l]{Fusion\\ \(\lambda_{attr}=0,\lambda_{div}=0\)}
-        & 83.73 & 85.21 & 95.53 & 98.74 & 87.47 & 3.87 & 23.02 \\
-
-        \makecell[l]{Fusion\\ \(\lambda_{attr}=0.5,\lambda_{div}=0\)}
-        & 84.16 & 85.47 & \textbf{95.63} & 98.62 & 87.69 & \textbf{3.14} & 87.01 \\
-
-        \makecell[l]{Fusion\\ \(\lambda_{attr}=0.5,\lambda_{div}=0.5\)}
-        & \textbf{84.36} & \textbf{85.83} & 95.62 & \textbf{99.03} & \textbf{88.00} & 3.62 & 87.04 \\
-        \hline
-    \end{tabular}
-    \end{adjustbox}
-\end{table}
-
-The no-fusion setting shows that auxiliary attribute supervision alone is not sufficient to improve species classification. Although this setting obtains the highest attribute prediction accuracy, its species accuracy is 84.38\%, which is slightly lower than the H-CAST rerun. This indicates that learning to predict attributes does not automatically transfer to better species recognition unless attribute-oriented features are explicitly connected to the species classifier.
-
-The comparison between the no-fusion setting and the fusion setting with \(\lambda_{attr}=0.5\), \(\lambda_{div}=0\) shows the importance of species-level fusion. With the same attribute supervision weight and no diversity loss, adding fusion improves FPA from 83.09\% to 84.16\%, species accuracy from 84.38\% to 85.47\%, and wAP from 86.82\% to 87.69\%. This supports the design choice of concatenating the attention-pooled attribute summary with the species class token.
-
-The fusion-only setting, where \(\lambda_{attr}=0\), improves species accuracy compared with the no-fusion setting, but its attribute accuracy drops sharply to 23.02\%. This suggests that the additional fusion path can learn classification-useful features through the species classification loss, but these features are not semantically aligned with CUB attributes when attribute supervision is removed.
-
-When attribute supervision is added to the fusion model with \(\lambda_{attr}=0.5\), FPA increases from 83.73\% to 84.16\%, species accuracy increases from 85.21\% to 85.47\%, TICE decreases from 3.87\% to 3.14\%, and attribute accuracy increases from 23.02\% to 87.01\%. This suggests that attribute supervision helps align the fused representation with semantic bird traits and improves taxonomy consistency in the no-diversity setting.
-
-Adding diversity regularization with \(\lambda_{div}=0.5\) further improves FPA, species accuracy, order accuracy, and wAP. The full model achieves the best species accuracy and wAP among the fusion-design settings. However, TICE increases compared with the no-diversity fusion setting, which again indicates a trade-off between fine-grained species discrimination and taxonomy consistency.
-
-Overall, this ablation shows that the proposed model benefits from the combination of attribute supervision and species-level fusion. Attribute supervision alone learns meaningful attribute predictors but does not improve species recognition without fusion. Fusion allows attribute-oriented features to affect the species classifier, while attribute supervision encourages these features to align with the selected CUB attribute targets. The best species accuracy and wAP are obtained when attribute supervision, fusion, and diversity regularization are used together.
+The result with \(\lambda_{div}=1.0\) suggests that too much diversity regularization may become harmful. A strong diversity constraint may over-regularize the internal attribute-group representations, especially when only a few cues are useful for a particular image. Therefore, the diversity loss should be treated as a regularizer that requires careful weighting rather than a universally beneficial component.
 
 
 
@@ -194,11 +273,12 @@ Overall, this ablation shows that the proposed model benefits from the combinati
 
 \subsection{Random Attribute Control}
 
-Random-199 is used to test whether the performance of HSDAS-199 comes from the hard-sibling-aware selection criterion or simply from using fewer attributes than FullAttr-312. In this thesis, Random-199 is constructed as a group-matched random control. It does not sample 199 attributes uniformly from the full 312-dimensional attribute space. Instead, for each semantic attribute group, it randomly samples the same number of attribute states as the HSDAS-199 mask. Therefore, Random-199 preserves the same group-level structure and active-group coverage as HSDAS-199, while removing the hard-sibling-aware selection criterion.
+This control further supports RQ4 by testing whether the performance of HSDAS-199 comes from the hard-sibling-aware selection criterion or from using a compact group-matched attribute subset with the same number of retained states per group. In this thesis, Random-199 is constructed as a group-matched random control. It does not sample 199 attributes uniformly from the full 312-dimensional attribute space. Instead, for each semantic attribute group, it randomly samples the same number of attribute states as the HSDAS-199 mask. Therefore, Random-199 preserves the same group-level structure and active-group coverage as HSDAS-199, while removing the hard-sibling-aware selection criterion.
+Mean and standard deviation are reported only for Random-199 because this experiment explicitly studies the variability caused by random attribute-mask sampling. Each random seed corresponds to a different group-matched attribute subset. The other settings, such as HSDAS-199, FullAttr-312, Sibling-IVAS-188, and the fusion or diversity variants, use fixed model configurations and fixed attribute masks; due to computational cost, they are trained once under the official CUB train/test protocol. Therefore, their results are reported as single-run values. A full multi-seed evaluation of all model variants would provide a stronger estimate of training variability, but it is outside the computational scope of this thesis.
 
 \begin{table}[t]
     \centering
-    \caption{Random attribute control. Random-199 uses the same number of attributes as HSDAS-199 and preserves the same number of selected attribute states per group. Mean and standard deviation are computed over three random seeds.}
+    \caption{Random attribute control. Random-199 uses the same number of attributes as HSDAS-199 and preserves the same number of selected attribute states per group. Mean and standard deviation are reported only for Random-199 because this experiment evaluates variability across randomly sampled attribute masks.}
     \label{tab:random_control}
     \scriptsize
     \setlength{\tabcolsep}{3pt}
@@ -214,15 +294,15 @@ Random-199 is used to test whether the performance of HSDAS-199 comes from the h
         & 199 & 84.40 & 85.66 & 95.86 & 98.95 & 87.89 & 3.42 & 91.06 \\
         Random-199 seed 3 
         & 199 & 84.19 & 85.47 & 95.75 & 98.95 & 87.72 & 3.11 & 91.77 \\
-        \makecell[l]{Random-199\\ mean \(\pm\) std}
+        \makecell[l]{Random-199\\mean \(\pm\) std}
         & 199 
-        & \makecell{84.15\\\(\pm 0.28\)}
-        & \makecell{85.45\\\(\pm 0.23\)}
-        & \makecell{95.79\\\(\pm 0.06\)}
-        & \makecell{98.95\\\(\pm 0.01\)}
-        & \makecell{87.71\\\(\pm 0.19\)}
-        & \makecell{3.33\\\(\pm 0.20\)}
-        & \makecell{91.28\\\(\pm 0.42\)} \\
+        & \(84.15 \pm 0.28\)
+        & \(85.45 \pm 0.23\)
+        & \(95.79 \pm 0.06\)
+        & \(98.95 \pm 0.01\)
+        & \(87.71 \pm 0.19\)
+        & \(3.33 \pm 0.20\)
+        & \(91.28 \pm 0.42\) \\
         HSDAS-199 
         & 199 & \textbf{84.36} & \textbf{85.83} & 95.62 & \textbf{99.03} & \textbf{88.00} & 3.62 & 87.04 \\
         \hline

@@ -107,11 +107,11 @@ The primary objective of this thesis is to develop and evaluate an attribute-gui
 
 \section{Scope of the Study}
 
-The scope of this research is limited to the CUB-200-2011 dataset. The study focuses on supervised fine-grained hierarchical bird image classification and does not address open-set recognition, zero-shot recognition, or prompt-based inference. Although recent prompt-based and language-assisted methods motivate the usefulness of semantic attributes for fine-grained reasoning, this thesis does not use language prompts, large language models, or manually provided attribute descriptions at inference time.
+The scope of this research is limited to the CUB-200-2011 dataset. The study focuses on supervised fine-grained hierarchical bird image classification and does not address open-set recognition, zero-shot recognition, or prompt-based inference. Although recent prompt-based and language-assisted methods motivate the usefulness of semantic attributes for fine-grained reasoning, this thesis does not use language prompts, large language models, or manually provided attribute descriptions at inference time. Exploring prompt-based or language-assisted attribute reasoning is left as a possible direction for future work.
 
 The CUB visual attributes are used only during training as auxiliary supervision. In the main setting of this thesis, class-level attribute annotations are used to supervise the group-wise attribute prediction heads. Therefore, all images from the same species share the same class-level attribute target. This setting is useful for injecting species-level semantic priors, but it does not model image-specific attribute visibility caused by pose, occlusion, viewpoint, or background variation.
 
-In addition, attribute localization is outside the scope of this thesis, any visualization is used only for qualitative diagnosis of model behavior.
+In addition, attribute localization is outside the scope of this thesis. Any visualization is used only for qualitative diagnosis of model behavior.
 
 The proposed attribute-guided module is applied primarily to the species-level prediction branch, because species recognition requires the most fine-grained visual evidence. Family and order predictions follow the higher-level hierarchical stages of the visual backbone. The main experiments follow the official CUB-200-2011 train/test protocol used in the H-CAST benchmark. Therefore, the conclusions are limited to this dataset and should not be assumed to generalize to other hierarchical classification tasks without further evaluation.
 

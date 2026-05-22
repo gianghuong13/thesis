@@ -2,6 +2,22 @@
 
 This section describes the attribute-guided learning module added on top of the H-CAST backbone \cite{park2025visually}. The purpose of this module is to use CUB attribute annotations \cite{wah2011cub} as auxiliary semantic supervision and to inject attribute-oriented information into species-level prediction. The module is designed for the species branch because species recognition is the most fine-grained level of the task and is expected to benefit most from semantic traits such as bill shape, wing pattern, breast color, crown color, and tail shape.
 
+Figure~\ref{fig:attribute_guided_module_detail} shows the detailed structure of the proposed attribute-guided species-level branch. The module receives two species-level outputs from the H-CAST backbone: species-level graph-node features and the species class token. Attribute-group queries attend to the species-level graph-node features to produce attribute-oriented features. These features are used in two ways. First, they are passed to group-specific attribute classifiers to produce auxiliary attribute predictions during training. Second, they are aggregated into an attribute summary vector, which is fused with the species class token before final species classification.
+
+\begin{figure}[t]
+    \centering
+    \includegraphics[width=\textwidth]{figures/modelv2.drawio.pdf}
+    \caption{
+    Detailed structure of the proposed attribute-guided species-level branch. 
+    Each active semantic attribute group is represented by a learnable query. 
+    The attribute-group queries perform cross-attention over species-level graph-node features to obtain attribute-oriented representations. 
+    These representations are supervised by group-wise attribute classifiers during training and are also aggregated into an attribute summary vector through attention pooling. 
+    The attribute summary vector is concatenated with the species class token and passed through a fusion MLP before the final species classifier. 
+    The dashed region indicates modules added on top of the original H-CAST backbone.
+    }
+    \label{fig:attribute_guided_module_detail}
+\end{figure}
+
 The proposed module has four main components: attribute-group queries, cross-attention over species-level graph features, group-specific attribute prediction heads, and species-level attribute fusion. Importantly, the module does not use one query or one classifier for each individual CUB attribute. Instead, it operates at the level of active attribute groups. Each active group corresponds to a semantic trait type, such as \textit{bill shape}, \textit{wing color}, \textit{breast pattern}, or \textit{tail shape}.
 
 \subsection{Attribute-Group Queries}
@@ -70,8 +86,7 @@ where \(\mathrm{MHA}(\cdot)\) denotes multi-head attention \cite{vaswani2017atte
 \end{equation}
 Each vector \(\mathbf{h}^{a}_{g}\) is an attribute-oriented representation for group \(g\).
 
-This operation allows each attribute group to extract an internal representation from the species-level graph nodes. However, the model is not trained with pixel-level or part-level attribute localization labels. Therefore, the attention weights should be interpreted as internal diagnostic signals rather than guaranteed localization maps of semantic attributes. This distinction is especially important for global groups such as \textit{size} and \textit{shape}, which do not correspond to one specific localized bird part.
-
+This operation allows each attribute group to extract an internal representation from the species-level graph nodes. The attention weights produced by this operation are internal signals of the cross-attention module. They are not treated as attribute localization outputs, because the model is not trained with pixel-level or part-level localization supervision.
 A key-padding mask is used in the attention operation to ignore invalid graph nodes introduced by padding. After cross-attention, the attribute-oriented features are normalized and passed through dropout:
 \begin{equation}
     H^{a}
@@ -223,10 +238,7 @@ Because the direct-fusion baseline does not produce attribute-query spatial atte
 
 \subsection{Interpretation of Attention Signals}
 
-The cross-attention-based model produces attention weights from attribute-group queries to species-level graph nodes, and attention-pooling weights from the species class token to attribute-group features. These signals can be visualized for diagnostic analysis. However, they should not be interpreted as ground-truth attribute localization.
-
-There are two reasons for this. First, the CUB attributes used in this thesis are class-level attributes rather than image-specific attribute visibility annotations. Second, the model is trained for hierarchical classification and auxiliary attribute prediction, not for pixel-level or part-level localization. Therefore, attention visualization is used only to understand internal model behavior, while the main evidence for effectiveness comes from quantitative metrics, component ablations, and prediction-level case analysis.
-
+The cross-attention-based model produces attention weights from attribute-group queries to species-level graph nodes, and attention-pooling weights from the species class token to attribute-group features. These signals can be inspected for qualitative diagnosis, but they are not used as evidence of attribute localization. The model is trained for hierarchical classification and auxiliary attribute prediction, not for pixel-level or part-level localization. Therefore, the main evidence for the effectiveness of the proposed module comes from quantitative metrics, component ablations, and prediction-level analysis.
 \subsection{Summary}
 
 The attribute-guided learning module extends H-CAST by adding attribute-oriented supervision and species-level fusion. The main cross-attention version uses one learnable query for each active attribute group, applies cross-attention over species-level graph-node features, predicts retained attribute categories with group-specific classifiers, and fuses the attention-pooled attribute summary with the species class token. This design allows the model to exploit CUB attributes during training while keeping inference image-based.

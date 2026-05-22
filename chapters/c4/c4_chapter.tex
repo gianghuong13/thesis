@@ -1,22 +1,32 @@
 \chapter{EXPERIMENTS AND EVALUATION}
 \label{chap:experiment}
 
-\section{Research Questions}
+\section{Experimental Roadmap}
 
-The experiments in this chapter are designed to answer the following research questions:
+The research questions have been defined in Chapter~1. This chapter evaluates them through a set of quantitative comparisons, ablation studies, and qualitative analyses.
 
-\begin{itemize}
-    \item \textbf{RQ1:} Does the proposed attribute-guided H-CAST improve hierarchical bird classification compared with the image-only H-CAST baseline under the official CUB-200-2011 train/test protocol?
+The experiments are organized as follows. First, the main comparison evaluates whether the proposed attribute-guided model improves over the image-only H-CAST baseline under the official CUB-200-2011 train/test protocol. This addresses the overall effectiveness of attribute guidance. Second, component ablations analyze the effects of species-level fusion, auxiliary attribute supervision, cross-attention, and diversity regularization. These experiments also include direct-fusion baselines without cross-attention to test whether the proposed cross-attention design provides additional benefit over simpler fusion. Third, attribute selection experiments compare HSDAS with FullAttr-312, Sibling-IVAS-188, and Random-199 to evaluate whether hard-sibling-aware attribute selection provides a more useful supervision mask. Finally, prediction-level and qualitative diagnostic analyses examine what types of errors are corrected by the proposed model, especially intra-family species confusions.
 
-    \item \textbf{RQ2:} Does using a compact selected attribute subset preserve or improve performance compared with using all 312 CUB attributes?
+This organization links the experimental results to the main claims of the thesis: whether attributes improve fine-grained hierarchical classification, which components contribute to the improvement, whether HSDAS is more effective than alternative attribute subsets, and how the proposed model changes prediction behavior compared with the image-only hierarchical baseline.
 
-    \item \textbf{RQ3:} Does the proposed HSDAS strategy outperform equally sized random subsets and the internal Sibling-IVAS statistical baseline?
-
-    \item \textbf{RQ4:} How do the proposed attribute-guided components, including species-level fusion, auxiliary attribute prediction, and diversity regularization, affect species accuracy, Full-Path Accuracy, wAP, TICE, and attribute prediction accuracy?
-\end{itemize}
-
-These questions correspond directly to the main goals of this thesis. RQ1 evaluates whether attribute-guided learning improves the image-only hierarchical baseline. RQ2 studies whether the proposed hard-sibling-aware attribute selection is more effective than using all attributes, random subsets, or earlier internal selection baselines that do not explicitly model hard siblings. RQ3 analyzes the role of the diversity regularization term. RQ4 examines how the attribute branch contributes to the final prediction behavior, including both classification performance and auxiliary attribute prediction quality.
-
+\begin{table}[t]
+    \centering
+    \caption{Mapping between research questions and experimental analyses.}
+    \label{tab:rq_experiment_mapping}
+    \small
+    \begin{tabular}{p{2cm}p{10cm}}
+        \hline
+        \textbf{Question} & \textbf{Experimental analysis} \\
+        \hline
+        RQ1 & Main comparison between H-CAST rerun, direct-fusion controls, and the proposed attribute-guided model. \\
+        RQ2 & Component ablations on species-level fusion and auxiliary attribute supervision. \\
+        RQ3 & Comparison between direct fusion without cross-attention and the cross-attention-based model. \\
+        RQ4 & Attribute selection comparison among FullAttr-312, HSDAS variants, Sibling-IVAS-188, and Random-199. \\
+        RQ5 & Diversity-loss ablation with different \(\lambda_{div}\) values. \\
+        RQ6 & Prediction-level error analysis and qualitative diagnostic comparison. \\
+        \hline
+    \end{tabular}
+\end{table}
 
 \section{Dataset and Experimental Protocol}
 
@@ -102,43 +112,50 @@ The image-only baselines do not use CUB attribute annotations during training or
     \end{tabular}
 \end{table}
 
-\subsection{Attribute-guided Variants}
+\subsection{Attribute-Guided and Direct-Fusion Variants}
 
-The attribute-guided variants extend the image-only H-CAST model by adding attribute-oriented learning to the species-level branch. In all these variants, attribute labels are used only during training. During inference, the model receives only the input image and the superpixel segmentation required by the H-CAST/CAST backbone.
+The attribute-guided variants extend the image-only H-CAST model by adding attribute-oriented learning to the species-level branch. In all these variants, attribute labels are used only during training. During inference, the model receives only the input image, while the superpixel segmentation required by the H-CAST/CAST backbone is generated automatically from the image.
 
-\textbf{Attribute-guided H-CAST.} This is the main model proposed in this thesis. It uses one learnable query for each active attribute group. These queries attend to species-level graph-node features and produce attribute-oriented representations. The representations are supervised by group-specific attribute classifiers and are also fused with the species-level class token before species prediction.
+\textbf{Direct fusion without cross-attention, no attribute loss.}
+This variant removes the attribute-query cross-attention module and generates group-wise attribute features directly from the species class token. It also disables auxiliary attribute supervision by setting \(\lambda_{attr}=0\). Therefore, this setting tests whether additional species-level fusion capacity alone can improve performance.
 
-\textbf{Attribute-guided H-CAST without diversity loss.} This variant removes the attribute attention diversity loss by setting \(\lambda_{div}=0\). It is used to evaluate whether the diversity regularization term contributes to the final performance.
+\textbf{Direct fusion without cross-attention, with attribute loss.}
+This variant uses the same direct-fusion architecture, but enables auxiliary attribute supervision with \(\lambda_{attr}=0.5\). It tests whether semantic attribute supervision is useful even when attribute-query cross-attention is removed.
 
-\textbf{Attribute-guided H-CAST with diversity loss.} This variant enables the diversity term with \(\lambda_{div}>0\). It is used to evaluate whether encouraging different attribute macro-parts to attend to complementary graph nodes improves fine-grained classification.
+\textbf{Attribute-guided H-CAST without diversity loss.}
+This variant uses attribute-group queries and cross-attention over species-level graph-node features, but removes the attribute attention diversity loss by setting \(\lambda_{div}=0\). It is used to evaluate the effect of cross-attention-based attribute guidance without diversity regularization.
 
+\textbf{Attribute-guided H-CAST with diversity loss.}
+This is the main proposed setting. It uses HSDAS-199, attribute-query cross-attention, auxiliary attribute supervision with \(\lambda_{attr}=0.5\), and diversity regularization with \(\lambda_{div}=0.5\).
 
 \begin{table}[t]
     \centering
-    \caption{Attribute-guided variants considered in the experiments.}
+    \caption{Attribute-guided and direct-fusion variants considered in the experiments. All variants preserve image-only inference.}
     \label{tab:attr_guided_variants}
     \small
-    \setlength{\tabcolsep}{4pt}
+    \setlength{\tabcolsep}{3pt}
     \renewcommand{\arraystretch}{1.15}
-    \begin{tabularx}{\textwidth}{@{}p{3.8cm}ccX@{}}
+    \begin{tabularx}{\textwidth}{@{}p{3.5cm}ccccX@{}}
         \hline
-        \textbf{Variant} & \(\lambda_{attr}\) & \(\lambda_{div}\) & \textbf{Purpose} \\
+        \textbf{Variant} & \textbf{Cross-attn} & \textbf{Fusion} & \(\lambda_{attr}\) & \(\lambda_{div}\) & \textbf{Purpose} \\
         \hline
-        Attribute-guided H-CAST w/o diversity 
-        & 0.5 & 0.0 
-        & Tests the effect of attribute supervision and species-level fusion without diversity regularization. \\
 
-        Attribute-guided H-CAST with diversity 
-        & 0.5 & 0.5 
-        & Main proposed setting with attribute supervision, species-level fusion, and diversity loss. \\
+        \makecell[l]{Direct fusion\\no AttrLoss}
+        & -- & \checkmark & 0.0 & 0.0
+        & Tests whether species-level fusion capacity alone improves performance. \\
 
-        Attribute-guided H-CAST with weak diversity 
-        & 0.5 & 0.1 
-        & Tests whether a smaller diversity weight gives a better trade-off. \\
+        \makecell[l]{Direct fusion\\with AttrLoss}
+        & -- & \checkmark & 0.5 & 0.0
+        & Tests whether auxiliary attribute supervision helps without cross-attention. \\
 
-        Attribute-guided H-CAST with stronger diversity 
-        & 0.5 & 1.0 
-        & Tests whether stronger diversity regularization improves or hurts performance. \\
+        \makecell[l]{Cross-attention\\without diversity}
+        & \checkmark & \checkmark & 0.5 & 0.0
+        & Tests cross-attention-based attribute guidance without diversity regularization. \\
+
+        \makecell[l]{Cross-attention\\with diversity}
+        & \checkmark & \checkmark & 0.5 & 0.5
+        & Main proposed setting with attribute supervision, cross-attention, species-level fusion, and diversity regularization. \\
+
         \hline
     \end{tabularx}
 \end{table}
@@ -339,38 +356,61 @@ This metric measures how well the auxiliary attribute heads learn the selected a
 
 \section{Main Results}
 
-This section presents the main comparison between the proposed attribute-guided H-CAST model and image-only baselines under the official CUB-200-2011 train/test protocol. The goal is to answer RQ1: whether attribute-guided learning improves hierarchical bird classification compared with the image-only H-CAST baseline. Unless otherwise stated, the proposed attribute-guided H-CAST refers to the HSDAS-199 setting with \(\lambda_{attr}=0.5\) and \(\lambda_{div}=0.5\).
+This section presents the main comparison under the official CUB-200-2011 train/test protocol. The goal is to answer RQ1 and provide an initial comparison between the image-only H-CAST baseline, direct-fusion controls, and the full proposed attribute-guided model. Unless otherwise stated, the proposed attribute-guided H-CAST refers to the HSDAS-199 setting with attribute-query cross-attention, \(\lambda_{attr}=0.5\), and \(\lambda_{div}=0.5\).
 
-Table~\ref{tab:main_results} reports Full-Path Accuracy (FPA), level-wise accuracies, Weighted Average Precision (wAP), Tree-based InConsistency Error (TICE), and attribute prediction accuracy when applicable. The image-only baselines do not use attribute annotations and therefore do not report attribute accuracy.
+Table~\ref{tab:main_results} reports Full-Path Accuracy (FPA), level-wise accuracies, weighted Average Precision (wAP), Tree-based InConsistency Error (TICE), and attribute prediction accuracy when applicable. The image-only baselines do not use attribute annotations and therefore do not report attribute accuracy. For the direct-fusion variant with \(\lambda_{attr}=0\), attribute accuracy is reported only as a diagnostic value because the attribute heads are not supervised.
 
 \begin{table}[t]
     \centering
-    \caption{Main comparison under the official CUB-200-2011 train/test protocol. Attribute accuracy is reported only for attribute-guided models.}
+    \caption{Main comparison under the official CUB-200-2011 train/test protocol. Higher is better for FPA, Species, Family, Order, wAP, and Attr; lower is better for TICE.}
     \label{tab:main_results}
     \small
-    \setlength{\tabcolsep}{4pt}
+    \setlength{\tabcolsep}{3pt}
     \renewcommand{\arraystretch}{1.12}
-    \begin{tabularx}{\textwidth}{@{}Xccccccc@{}}
+    \begin{adjustbox}{max width=\textwidth}
+    \begin{tabular}{@{}lcccccccc@{}}
         \hline
-        \textbf{Method} & \textbf{FPA} & \textbf{Species} & \textbf{Family} & \textbf{Order} & \textbf{wAP} & \textbf{TICE} & \textbf{Attr} \\
+        \textbf{Method} & \textbf{Design} & \textbf{FPA} & \textbf{Species} & \textbf{Family} & \textbf{Order} & \textbf{wAP} & \textbf{TICE} & \textbf{Attr} \\
         \hline
-        H-CAST authors 
+
+        H-CAST authors
+        & Image-only
         & 83.28 & 84.86 & 95.12 & 98.65 & 87.13 & 4.12 & -- \\
-        H-CAST rerun 
+
+        H-CAST rerun
+        & Image-only
         & 82.86 & 84.55 & 95.22 & 98.74 & 86.90 & 4.35 & -- \\
-        \makecell[l]{Proposed attribute-guided\\H-CAST} 
-        & \textbf{84.36} & \textbf{85.83} & \textbf{95.62} & \textbf{99.03} & \textbf{88.00} & \textbf{3.62} & 87.04 \\
+
+        \makecell[l]{Direct fusion\\\(\lambda_{attr}=0.0\)}
+        & \makecell{No cross-attn\\No AttrLoss}
+        & 83.93 & 85.35 & \textbf{95.74} & 99.00 & 87.63 & 3.64 & 21.17 \\
+
+        \makecell[l]{Direct fusion\\\(\lambda_{attr}=0.5\)}
+        & \makecell{No cross-attn\\AttrLoss}
+        & 84.05 & 85.50 & 95.58 & 98.90 & 87.72 & 3.76 & \textbf{92.24} \\
+
+        \makecell[l]{Proposed attribute-guided\\H-CAST}
+        & \makecell{Cross-attn\\AttrLoss + Div}
+        & \textbf{84.36} & \textbf{85.83} & 95.62 & \textbf{99.03} & \textbf{88.00} & \textbf{3.62} & 87.04 \\
+
         \hline
-    \end{tabularx}
+    \end{tabular}
+    \end{adjustbox}
 \end{table}
 
-The proposed attribute-guided H-CAST improves all accuracy-based metrics compared with the H-CAST rerun. Specifically, it improves FPA from 82.86\% to 84.36\%, species accuracy from 84.55\% to 85.83\%, family accuracy from 95.22\% to 95.62\%, order accuracy from 98.74\% to 99.03\%, and wAP from 86.90\% to 88.00\%. It also reduces TICE from 4.35\% to 3.62\%. This result suggests that adding attribute-guided auxiliary supervision and species-level attribute fusion provides useful information beyond the image-only H-CAST baseline.
+Compared with the H-CAST rerun, the proposed attribute-guided H-CAST improves FPA from 82.86\% to 84.36\%, species accuracy from 84.55\% to 85.83\%, family accuracy from 95.22\% to 95.62\%, order accuracy from 98.74\% to 99.03\%, and wAP from 86.90\% to 88.00\%. It also reduces TICE from 4.35\% to 3.62\%. This shows that using CUB attributes as training-time auxiliary supervision, together with species-level attribute fusion, can improve the image-only hierarchical baseline.
 
-The largest improvement appears at the species level, which is consistent with the design of the proposed architecture. Attribute-guided fusion is applied to the species-level branch, where fine-grained cues are most important. Since wAP is weighted by the number of classes at each hierarchy level, the improvement in species accuracy also contributes strongly to the improvement in wAP.
+The strongest improvement appears at the species level, which is consistent with the design of the proposed method. The attribute-guided branch is attached to the species-level prediction branch, where fine-grained semantic traits are expected to be most useful. Since wAP is weighted by the number of classes at each hierarchy level, the improvement in species accuracy also contributes strongly to the improvement in wAP.
 
-Compared with the result reported by the original H-CAST authors, the proposed model also achieves higher FPA, species accuracy, family accuracy, order accuracy, and wAP, while obtaining a lower TICE. However, the comparison with the H-CAST rerun should be considered the primary comparison, because it is produced under the same implementation environment and training setup as the proposed model.
+The direct-fusion controls provide an important comparison. Direct fusion without auxiliary attribute supervision already improves over the H-CAST rerun, increasing species accuracy from 84.55\% to 85.35\% and FPA from 82.86\% to 83.93\%. This indicates that part of the gain can come from additional species-level feature transformation and fusion capacity. When auxiliary attribute supervision is added to the direct-fusion baseline, FPA increases further to 84.05\% and species accuracy to 85.50\%. This suggests that semantic attribute supervision provides additional benefit beyond direct fusion alone, although the gain is moderate.
 
-Overall, the main result supports the effectiveness of attribute-guided learning for hierarchical bird classification. Nevertheless, later ablation studies show that the improvement depends on the attribute subset and the loss configuration. Therefore, the proposed method should be interpreted as improving fine-grained species discrimination, while the relationship between species accuracy and taxonomy consistency still requires careful analysis.
+The full proposed model achieves the best FPA, species accuracy, order accuracy, wAP, and TICE among the compared models. Compared with direct fusion with attribute loss, the proposed model improves FPA from 84.05\% to 84.36\%, species accuracy from 85.50\% to 85.83\%, and wAP from 87.72\% to 88.00\%, while reducing TICE from 3.76\% to 3.62\%. This suggests that the cross-attention-based attribute-guided design with diversity regularization provides additional benefit over a simpler direct-fusion design.
+
+Attribute prediction accuracy should be interpreted carefully. The direct-fusion model with attribute loss obtains the highest attribute accuracy, 92.24\%, but it does not achieve the best species accuracy or FPA. Conversely, the proposed model obtains lower attribute accuracy, 87.04\%, while achieving the best classification performance. This confirms that auxiliary attribute accuracy is a diagnostic metric for the attribute branch, not the final objective. Higher attribute prediction accuracy does not necessarily imply better fine-grained species recognition.
+
+Compared with the result reported by the original H-CAST authors, the proposed model also achieves higher FPA, species accuracy, family accuracy, order accuracy, and wAP, while obtaining lower TICE. However, the comparison with the H-CAST rerun should be considered the primary comparison because it is produced under the same implementation environment and training setup as the proposed model.
+
+Overall, the main results support the effectiveness of attribute-guided learning for fine-grained hierarchical bird classification. They also show that the improvement is not explained by a single factor. Direct fusion and additional capacity already help, attribute supervision provides further benefit, and the full cross-attention-based model achieves the strongest classification performance. The following ablation studies analyze these components in more detail.
 
 
 \input{chapters/c4/c4_1_ablation_studies}

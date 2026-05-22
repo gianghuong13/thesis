@@ -4,14 +4,16 @@
 \addvspace {10\p@ }
 \contentsline {table}{\numberline {3.1}{\ignorespaces CUB attribute groups used in this thesis. Each group contains a set of attribute states.}}{43}{table.caption.3}%
 \addvspace {10\p@ }
-\contentsline {table}{\numberline {4.1}{\ignorespaces Image-only baselines used for comparison. Results are reported under the official CUB train/test protocol.}}{70}{table.caption.4}%
-\contentsline {table}{\numberline {4.2}{\ignorespaces Attribute-guided variants considered in the experiments.}}{71}{table.caption.5}%
-\contentsline {table}{\numberline {4.3}{\ignorespaces Attribute selection variants compared in this thesis. All variants are evaluated under the official CUB train/test protocol.}}{73}{table.caption.6}%
-\contentsline {table}{\numberline {4.4}{\ignorespaces Main comparison under the official CUB-200-2011 train/test protocol. Attribute accuracy is reported only for attribute-guided models.}}{77}{table.caption.7}%
-\contentsline {table}{\numberline {4.5}{\ignorespaces Effect of attribute selection strategy under the official CUB train/test protocol. Random-199 is reported as the mean over three random seeds.}}{78}{table.caption.8}%
-\contentsline {table}{\numberline {4.6}{\ignorespaces Effect of HSDAS attribute subset size. HSDAS-174 uses top-3 attributes per species, while HSDAS-199 uses top-5 attributes per species. All settings use the official CUB train/test protocol.}}{80}{table.caption.9}%
-\contentsline {table}{\numberline {4.7}{\ignorespaces Effect of the attribute attention diversity loss using HSDAS-199.}}{80}{table.caption.10}%
-\contentsline {table}{\numberline {4.8}{\ignorespaces Effect of attribute supervision, species-level fusion, and diversity regularization under the official CUB train/test protocol.}}{82}{table.caption.11}%
-\contentsline {table}{\numberline {4.9}{\ignorespaces Random attribute control. Random-199 uses the same number of attributes as HSDAS-199 and preserves the same number of selected attribute states per group. Mean and standard deviation are computed over three random seeds.}}{83}{table.caption.12}%
-\contentsline {table}{\numberline {4.10}{\ignorespaces Prediction-level case analysis comparing the H-CAST rerun and the proposed attribute-guided model on the CUB test set.}}{86}{table.caption.13}%
+\contentsline {table}{\numberline {4.1}{\ignorespaces Mapping between research questions and experimental analyses.}}{68}{table.caption.5}%
+\contentsline {table}{\numberline {4.2}{\ignorespaces Image-only baselines used for comparison. Results are reported under the official CUB train/test protocol.}}{72}{table.caption.6}%
+\contentsline {table}{\numberline {4.3}{\ignorespaces Attribute-guided and direct-fusion variants considered in the experiments. All variants preserve image-only inference.}}{73}{table.caption.7}%
+\contentsline {table}{\numberline {4.4}{\ignorespaces Attribute selection variants compared in this thesis. All variants are evaluated under the official CUB train/test protocol.}}{74}{table.caption.8}%
+\contentsline {table}{\numberline {4.5}{\ignorespaces Main comparison under the official CUB-200-2011 train/test protocol. Higher is better for FPA, Species, Family, Order, wAP, and Attr; lower is better for TICE.}}{79}{table.caption.9}%
+\contentsline {table}{\numberline {4.6}{\ignorespaces Effect of fusion design, auxiliary attribute supervision, cross-attention, and diversity regularization under the official CUB train/test protocol. For settings with \(\lambda _{attr}=0\), attribute accuracy is reported only as a diagnostic value because the attribute heads are not supervised.}}{81}{table.caption.10}%
+\contentsline {table}{\numberline {4.7}{\ignorespaces Inference-time ablation of the attribute summary vector. The model is trained normally; only the attribute summary vector or the fusion path is modified during evaluation. Higher is better for Species, Family, Order, Attr, and FPA; lower is better for TICE. }}{82}{table.caption.11}%
+\contentsline {table}{\numberline {4.8}{\ignorespaces Effect of attribute selection strategy under the official CUB train/test protocol. Random-199 is summarized by its mean over three random masks; the individual seeds and standard deviations are reported in Table~\ref {tab:random_control}.}}{84}{table.caption.12}%
+\contentsline {table}{\numberline {4.9}{\ignorespaces Effect of HSDAS attribute subset size. HSDAS-174 uses top-3 attributes per species, while HSDAS-199 uses top-5 attributes per species. All settings use the official CUB train/test protocol.}}{85}{table.caption.13}%
+\contentsline {table}{\numberline {4.10}{\ignorespaces Effect of the attribute attention diversity loss using HSDAS-199.}}{86}{table.caption.14}%
+\contentsline {table}{\numberline {4.11}{\ignorespaces Random attribute control. Random-199 uses the same number of attributes as HSDAS-199 and preserves the same number of selected attribute states per group. Mean and standard deviation are reported only for Random-199 because this experiment evaluates variability across randomly sampled attribute masks.}}{87}{table.caption.15}%
+\contentsline {table}{\numberline {4.12}{\ignorespaces Prediction-level case analysis comparing the H-CAST rerun and the proposed attribute-guided model on the CUB test set.}}{90}{table.caption.16}%
 \addvspace {10\p@ }
